@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+node_modules/
+*.log
+.DS_Store
+recordings/
+vexo-open-kit/
+dist/
+before-i-forget-memories*.json
