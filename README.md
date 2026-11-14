@@ -179,6 +179,10 @@ The family view is at `http://localhost:8000/web/family.html`.
 - Built on the **Vexo Open kit** — thank you to the Vexo team for the hardware
   and the hackathon.
 - 3D worlds by [World Labs Atlas](https://www.worldlabs.ai/).
+- Reference photo of Stow Lake by Daderot, released under
+  [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) via
+  [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Stow_Lake_-_Golden_Gate_Park,_San_Francisco,_CA_-_DSC09739.JPG).
+  Per-memory photo sources are listed in each `memories/<id>/photos/SOURCES.md`.
 - Voice by [ElevenLabs](https://elevenlabs.io/), transcription by
   [Deepgram](https://deepgram.com/), language model by
   [OpenAI](https://openai.com/).
