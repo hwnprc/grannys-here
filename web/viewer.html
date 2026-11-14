@@ -166,6 +166,34 @@
   button:active { transform: none; }
   button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
+  #pano {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 2.4s ease;
+  }
+
+  #pano.visible { opacity: 1; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; }
+
+  a.ghost {
+    font-size: 1.02rem;
+    color: var(--amber);
+    background: transparent;
+    border: 1px solid rgba(240, 168, 80, 0.45);
+    border-radius: 999px;
+    padding: 0.85rem 1.6rem;
+    text-decoration: none;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+
+  a.ghost:hover { background: var(--amber-sq); transform: translateY(-2px); }
+  a.ghost:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
   .transcript {
     margin-top: 2.6rem;
     border-top: 1px solid var(--line);
@@ -236,6 +264,7 @@
 <body>
 
 <div id="world-layer">
+  <img id="pano" alt="" aria-hidden="true">
   <video id="world" muted loop playsinline preload="auto" aria-hidden="true"></video>
 </div>
 <div id="scrim"></div>
@@ -251,7 +280,12 @@
     <p class="summary" id="summary"></p>
     <ul class="meta" id="meta"></ul>
 
-    <button id="replay" type="button">Hear the story again</button>
+    <div class="actions">
+      <button id="replay" type="button">Hear the story again</button>
+      <a id="world-link" class="ghost" href="#" target="_blank" rel="noopener" hidden>
+        Walk through this place &#8599;
+      </a>
+    </div>
 
     <details class="transcript" id="transcript-box" hidden>
       <summary>In her words</summary>
@@ -374,26 +408,53 @@
       $("transcript-box").hidden = false;
     }
 
-    // the 3D world
-    var worldFile = files.world || "world.mp4";
-    if (/\.(mp4|webm|mov)$/i.test(worldFile)) {
-      world.src = base + worldFile;
-      world.addEventListener("canplay", function () {
-        world.classList.add("visible");
-        var p = world.play();
-        if (p && p.catch) { p.catch(function () { /* autoplay blocked; still shown */ }); }
-      });
-      world.addEventListener("error", function () {
-        showNote("The 3D world for this place hasn't been generated yet.");
-      });
-    } else if (worldFile) {
-      // a splat or other non-video world — not rendered here yet
-      showNote("This place has a 3D world file (" + worldFile + ") that this viewer " +
-               "doesn't render yet.");
+    // ---- the 3D world ----
+    // Marble sends X-Frame-Options: DENY, so its world page cannot be iframed.
+    // Inline backdrop comes from the panorama (or a recorded video); the live,
+    // navigable world opens in a new tab.
+    // Live Marble world, if we have one.
+    if (m.world_url) {
+      var link = $("world-link");
+      link.href = m.world_url;
+      link.hidden = false;
+    }
+
+    var panoFile  = files.pano;
+    var worldFile = files.world;
+
+    // Preference 2: a recorded video of the world.
+    function tryVideo() {
+      if (worldFile && /\.(mp4|webm|mov)$/i.test(worldFile)) {
+        world.addEventListener("canplay", function () {
+          world.classList.add("visible");
+          var p = world.play();
+          if (p && p.catch) { p.catch(function () { /* autoplay blocked; still shown */ }); }
+        });
+        world.addEventListener("error", function () { missingWorld(m); });
+        world.src = base + worldFile;
+      } else {
+        missingWorld(m);
+      }
+    }
+
+    // Preference 1: panorama still — offline-safe, no autoplay rules.
+    if (panoFile) {
+      var pano = $("pano");
+      pano.addEventListener("load", function () { pano.classList.add("visible"); });
+      pano.addEventListener("error", tryVideo);   // fall through to the video
+      pano.src = base + panoFile;
+    } else {
+      tryVideo();
     }
 
     state.hidden = true;
     story.hidden = false;
+  }
+
+  function missingWorld(m) {
+    showNote(m && m.world_url
+      ? "No panorama saved for this place yet — the live 3D world still opens above."
+      : "The 3D world for this place hasn't been generated yet.");
   }
 
   function showNote(text) {

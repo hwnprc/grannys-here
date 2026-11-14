@@ -148,9 +148,12 @@ Load with `python-dotenv`. **Never print, log, hardcode or commit keys.**
   "approved": true,
   "intro_line": "You used to come here with your daughter every Sunday. Would you like to hear that story?",
   "scene_prompt": "A quiet lake in a city park on a sunny autumn afternoon...",
+  "world_id": "dc2c65e4-...",
+  "world_url": "https://marble.worldlabs.ai/world/dc2c65e4-...",
   "files": {
     "audio": "audio.wav",
     "intro": "intro.mp3",
+    "pano": "pano.jpg",
     "world": "world.mp4"
   },
   "created_at": "2026-11-14T15:00:00-08:00"
@@ -158,6 +161,25 @@ Load with `python-dotenv`. **Never print, log, hardcode or commit keys.**
 ```
 
 `location_key` is a short key the demo trigger matches on (`park`, `kitchen`, `church`).
+
+**The world API does not return a video.** `POST https://api.worldlabs.ai/marble/v1/worlds:generate`
+(header `WLT-Api-Key`) is asynchronous: poll `/marble/v1/operations/{id}` for about
+five minutes, then `response.assets` gives Gaussian splats (`splats.spz_urls`), a GLB
+collider mesh, a panorama (`imagery.pano_url`), a thumbnail, and `world_marble_url`.
+There is no mp4 anywhere in that payload.
+
+`world_prompt.type` may be `text`, `image`, `multi-image` or `video`. The `image` type
+takes `image_prompt` **and** an optional `text_prompt`, so send the reference photo and
+`scene_prompt` together: the photo fixes the real geometry, the prompt carries season and
+mood from her own words.
+
+**marble.worldlabs.ai cannot be embedded** — it serves `X-Frame-Options: DENY` and
+`frame-ancestors 'none'`, so an iframe renders an empty refusal box. The viewer therefore
+shows `files.pano` inline and links out to `world_url` in a new tab. `files.world`
+(a screen recording) still works as an offline fallback and takes over when there is no
+panorama.
+
+Generation needs a funded World Labs account — credits must be purchased before any key works.
 
 ---
 
