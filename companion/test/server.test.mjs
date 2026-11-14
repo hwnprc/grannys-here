@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {handleRequest,safeFile,CSP} from '../server.mjs';
+import {readFile} from 'node:fs/promises';
+async function request(url,method='GET',host='localhost:3000'){const result={};await handleRequest({url,method,headers:{host}},{writeHead(code,headers){result.code=code;result.headers=headers;},end(body){result.body=body?.toString();}});return result;}
+test('main page and complete module dependency graph can be served',async()=>{assert.equal((await request('/')).code,200);for(const path of ['/vexo-ui.js','/vexo-data.js','/vexo-capture.js','/config.js','/vexo.css','/base.css','/vexo-open-kit/js/src/index.js','/vexo-open-kit/js/src/band.js','/vexo-open-kit/dashboard/speech/deepgram.js'])assert.equal((await request(path)).code,200,path);});
+test('private files and traversal are inaccessible',async()=>{for(const p of ['/.env','/server.mjs','/package.json','/../.env','/vexo-open-kit/AGENTS.md','/%2e%2e%2f.env','/vexo-open-kit/js/src/../../AGENTS.md'])assert.equal((await request(p)).code,404,p);assert.equal(safeFile('/%00.js'),null);assert.equal(safeFile('/bad%'),null);});
+test('rejects DNS rebinding hosts and writes',async()=>{assert.equal((await request('/','GET','attacker.example')).code,403);assert.equal((await request('/','POST')).code,405);assert.equal((await request('/api/health')).code,200);});
+test('privacy headers pin speech destination and disallow external scripts',async()=>{const r=await request('/');assert.match(r.headers['Content-Security-Policy'],/script-src 'self'/);assert.match(CSP,/wss:\/\/api.deepgram.com/);assert.equal(r.headers['Cache-Control'],'no-store');assert.equal((await request('/','HEAD')).body,undefined);});
+test('UI renders untrusted transcript text without HTML injection sinks',async()=>{const js=await readFile(new URL('../public/vexo-ui.js',import.meta.url),'utf8');assert.doesNotMatch(js,/\.innerHTML\s*=|eval\(|new Function\(/);assert.match(js,/textContent=c.originalText/);assert.doesNotMatch(js,/localStorage\.(?:setItem|getItem)\(['"](?:key|token|api)/i);});
