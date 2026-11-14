@@ -134,7 +134,7 @@ python3 process.py sunday-park --location park --approve --atlas
 
 ```bash
 # 3. Generate the 3D world (photo + scene_prompt, ~5 min, uses credits)
-python3 atlas.py sunday-park
+python3 place_to_world.py sunday-park
 ```
 
 ```bash
@@ -155,19 +155,21 @@ The family view is at `http://localhost:8000/web/family.html`.
 
 ### About the 3D world
 
-`atlas.py` sends the reference photo **and** the `scene_prompt` to World Labs in
+`place_to_world.py` sends the reference photo **and** the `scene_prompt` to World Labs in
 one request — the photo fixes the real geometry of the place, the prompt carries
 the season and mood from Granny's own words. Generation takes about five minutes
 and needs an account with purchased credits.
 
 The API returns Gaussian splats, a GLB mesh, a panorama and a link to the world;
-it never returns a video. `atlas.py` saves the panorama as `pano.jpg` and records
-`world_url` in `memory.json`. The viewer shows that panorama inline and offers
+it never returns a video. `place_to_world.py` saves the panorama as `pano.jpg` and the
+splat as `world.spz`, and records `world_url` in `memory.json`. The viewer shows that panorama inline and offers
 "Walk through this place", which opens the live navigable world in a new tab —
 World Labs sends `X-Frame-Options: DENY`, so it cannot be embedded in the page.
 
-Useful flags: `--dry-run` (print the request, send nothing, no key needed),
-`--text-only` (prompt alone), `--model marble-1.1-plus` (larger outdoor worlds).
+Worlds are link-viewable by default; `--private` opts out. Permission can **only** be set
+when the world is created — there is no update endpoint — so a private world has to be
+regenerated to share it. Other flags: `--dry-run` (find the photo and build the prompt,
+send nothing), `--draft` (faster and cheaper), `--place` / `--prompt` (no `memory.json` yet).
 
 ---
 

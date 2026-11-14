@@ -19,7 +19,8 @@ What it does:
        and adds world_url (the walkable Marble world, opened from the viewer) to memory.json.
 
 Needs WORLDLABS_API_KEY in .env (from the World Labs Platform: API credits are separate
-from Marble app credits). Only uses the standard library + requests.
+from Marble app credits). Standard library + requests, and pillow if installed (it scales
+the photo under the API's 10 MB inline limit and the panorama down to a web-sized file).
 """
 import argparse
 import base64
@@ -35,6 +36,8 @@ ROOT = Path(__file__).resolve().parent
 API = "https://api.worldlabs.ai/marble/v1"
 UA = {"User-Agent": "GrannysHere/0.1 (VexoHacks hackathon project)"}   # Wikimedia asks for one
 IMAGE_EXT = (".jpg", ".jpeg", ".png", ".webp")
+MAX_INLINE_EDGE = 2048      # source=data_base64 is capped at 10 MB; a phone photo goes past it
+MAX_PANO_EDGE = 2560        # the API panorama is ~4600px / 17 MB, far too heavy for viewer.html
 REALISM = ("Photorealistic, like a real photograph taken at this real place, natural lighting, "
            "true-to-life materials and vegetation. Keep the real landmarks of the photo.")
 
@@ -109,8 +112,58 @@ def wikimedia_photo(place, folder):
 
 
 # ---------------------------------------------------------------- 2-4. Marble API
-def generate_world(key, photo, prompt, name, model, public):
+def inline_image(photo):
+    """The photo as base64, scaled down first.
+
+    Inline data is capped at 10 MB and base64 adds a third, so anything over about
+    7.5 MB on disk fails. Our Stow Lake photo is 6.6 MB -> 8.8 MB encoded: it fits,
+    but only just, and a photo straight off a phone would not.
+    """
+    raw = photo.read_bytes()
     ext = photo.suffix.lower().lstrip(".")
+    ext = "jpg" if ext == "jpeg" else ext
+    try:
+        import io
+
+        from PIL import Image
+        img = Image.open(io.BytesIO(raw))
+        if max(img.size) > MAX_INLINE_EDGE:
+            img.thumbnail((MAX_INLINE_EDGE, MAX_INLINE_EDGE), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.convert("RGB").save(buf, "JPEG", quality=90, optimize=True)
+            raw, ext = buf.getvalue(), "jpg"
+            print("· photo scaled to %dx%d (%.1f MB) for the 10 MB inline limit"
+                  % (img.size[0], img.size[1], len(raw) / 1e6))
+    except ImportError:
+        if len(raw) * 4 / 3 > 9.5e6:
+            sys.exit("✗ the photo is %.1f MB and base64 would pass the API's 10 MB inline "
+                     "limit. Run: python3 -m pip install pillow" % (len(raw) / 1e6))
+    return base64.b64encode(raw).decode("ascii"), ext
+
+
+def shrink_pano(path):
+    """The panorama arrives at full resolution; the viewer needs a web-sized one."""
+    try:
+        from PIL import Image
+    except ImportError:
+        print("· pillow not installed: panorama left at full size (%.1f MB)"
+              % (path.stat().st_size / 1e6))
+        return
+    img = Image.open(path)
+    if max(img.size) <= MAX_PANO_EDGE:
+        return
+    full = path.with_name("pano-full.jpg")      # git-ignored; kept locally
+    if not full.exists():
+        path.rename(full)
+        img = Image.open(full)
+    img.thumbnail((MAX_PANO_EDGE, MAX_PANO_EDGE), Image.LANCZOS)
+    img.convert("RGB").save(path, "JPEG", quality=86, optimize=True)
+    print("· panorama scaled to %dx%d (%.1f MB); full size kept as %s"
+          % (img.size[0], img.size[1], path.stat().st_size / 1e6, full.name))
+
+
+def generate_world(key, photo, prompt, name, model, public):
+    data_b64, ext = inline_image(photo)
     body = {
         "display_name": name[:64],
         "model": model,
@@ -121,8 +174,8 @@ def generate_world(key, photo, prompt, name, model, public):
             "disable_recaption": True,
             "image_prompt": {
                 "source": "data_base64",
-                "data_base64": base64.b64encode(photo.read_bytes()).decode("ascii"),
-                "extension": "jpg" if ext == "jpeg" else ext,
+                "data_base64": data_b64,
+                "extension": ext,
             },
             "is_pano": "auto",
         },
@@ -241,6 +294,7 @@ def main():
     if pano:
         try:
             download(pano, folder / "pano.jpg")
+            shrink_pano(folder / "pano.jpg")
             files["pano"] = "pano.jpg"            # viewer.html shows this full-bleed
             print("✓ saved panorama: %s" % (folder / "pano.jpg"))
         except requests.RequestException as problem:

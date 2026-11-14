@@ -173,17 +173,26 @@ takes `image_prompt` **and** an optional `text_prompt`, so send the reference ph
 `scene_prompt` together: the photo fixes the real geometry, the prompt carries season and
 mood from her own words.
 
-`image_prompt` is an **object**, not a string — sending base64 is rejected with HTTP 422:
+`image_prompt` is an **object**, never a bare string — a plain base64 string is rejected
+with HTTP 422. It takes one of three sources:
 
 ```json
+{"source": "data_base64", "data_base64": "...", "extension": "jpg"}
 {"source": "uri", "uri": "https://..."}
 {"source": "media_asset", "media_asset_id": "..."}
 ```
 
-A local photo therefore needs three calls: `POST /marble/v1/media-assets:prepare_upload`
-(`{file_name, kind: "image", extension}`) returns a media asset id and a signed URL, then
-`PUT` the bytes to that URL with its `required_headers`, then generate with
-`source: "media_asset"`. `atlas.py` does all three.
+`place_to_world.py` uses `data_base64`, which is capped at **10 MB** — base64 adds a third,
+so anything over about 7.5 MB on disk fails. It scales the photo to 2048px first. For
+bigger files the `media_asset` route has no such cap: `POST /marble/v1/media-assets:prepare_upload`
+returns an id and a signed URL, `PUT` the bytes, then generate by `media_asset_id`.
+
+The live API returns `media_asset_id` and `world_id` where the docs examples show `id`.
+
+**Permission can only be set when a world is created.** There is no update endpoint — the
+whole API is generate, get, list, export and delete. A world made private stays private
+("You don't have permission to view this world" for anyone else) and must be regenerated
+to share it. `place_to_world.py` makes worlds link-viewable by default; `--private` opts out.
 
 **marble.worldlabs.ai cannot be embedded** — it serves `X-Frame-Options: DENY` and
 `frame-ancestors 'none'`, so an iframe renders an empty refusal box. The viewer therefore
