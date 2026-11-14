@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Her memories — Granny's Here</title>
+<style>
+  :root {
+    --bg:        #140f0b;
+    --card:      #1e1611;
+    --card-up:   #261c15;
+    --ink:       #f6ece1;
+    --ink-dim:   #c6b4a3;
+    --ink-faint: #8d7a69;
+    --amber:     #f0a850;
+    --green:     #8fc08a;
+    --violet:    #b79ad6;
+    --line:      rgba(246, 236, 225, 0.12);
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(900px 500px at 15% -5%, #2a1f18 0%, transparent 70%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 7vh 2rem 6rem;
+  }
+
+  header { margin-bottom: 3rem; }
+
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 0 0 0.9rem;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin: 0 0 1rem;
+  }
+
+  .lede {
+    font-size: 1.05rem;
+    color: var(--ink-dim);
+    margin: 0;
+    max-width: 38rem;
+  }
+
+  /* ---- list ---- */
+
+  ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+
+  .memory {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.5rem 1.6rem;
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+
+  .memory:hover { background: var(--card-up); border-color: rgba(246,236,225,0.2); }
+
+  .memory h2 {
+    font-family: var(--serif);
+    font-size: 1.45rem;
+    font-weight: 400;
+    line-height: 1.25;
+    margin: 0 0 0.4rem;
+  }
+
+  .memory h2 a { color: var(--ink); text-decoration: none; }
+  .memory h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .memory h2 a:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: 3px; }
+
+  .place {
+    color: var(--ink-faint);
+    font-size: 0.92rem;
+    margin: 0 0 1rem;
+  }
+
+  .summary {
+    font-family: var(--serif);
+    color: var(--ink-dim);
+    margin: 0 0 1.2rem;
+  }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  .badge {
+    font-size: 0.8rem;
+    border-radius: 999px;
+    padding: 0.28rem 0.8rem;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    white-space: nowrap;
+  }
+
+  .badge::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+
+  .badge.approved {
+    color: var(--green);
+    background: rgba(143, 192, 138, 0.12);
+    border-color: rgba(143, 192, 138, 0.28);
+  }
+
+  .badge.waiting {
+    color: var(--ink-faint);
+    background: rgba(246, 236, 225, 0.05);
+    border-color: var(--line);
+  }
+
+  .badge.sensitive {
+    color: var(--violet);
+    background: rgba(183, 154, 214, 0.12);
+    border-color: rgba(183, 154, 214, 0.3);
+  }
+
+  /* what the band will actually do */
+  .surfacing {
+    margin: 1.2rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+  }
+
+  .surfacing b { font-weight: 600; color: var(--ink-dim); }
+
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex: none;
+    transform: translateY(-1px);
+  }
+
+  .dot.on  { background: var(--amber); box-shadow: 0 0 12px 2px rgba(240,168,80,0.5); }
+  .dot.off { background: transparent; border: 1.5px solid var(--ink-faint); }
+
+  /* ---- states + footer ---- */
+
+  .state {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    color: var(--ink-dim);
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.88rem;
+    color: var(--amber);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.12rem 0.42rem;
+  }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
+  footer p { margin: 0 0 0.6rem; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 5vh 1.2rem 4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">For her family</p>
+    <h1>Her memories</h1>
+    <p class="lede">
+      Nothing reaches her automatically until someone here approves it. Memories
+      about loss, illness or conflict stay quiet even when approved — she can
+      still open those herself, but the band will never offer them.
+    </p>
+  </header>
+
+  <p class="state" id="state">Loading memories…</p>
+
+  <ol id="list" hidden></ol>
+
+  <footer id="footer" hidden>
+    <p>To approve a memory, re-run it through the pipeline:</p>
+    <p><code>python3 process.py &lt;memory_id&gt; --approve --location park</code></p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Fallback if memories/index.json is missing — add ids here by hand.
+  var KNOWN_IDS = ["sunday-park"];
+
+  var state = $("state");
+  var list  = $("list");
+
+  function $(id) { return document.getElementById(id); }
+
+  fetch("../memories/index.json", { cache: "no-store" })
+    .then(function (res) {
+      if (!res.ok) { throw new Error("no index"); }
+      return res.json();
+    })
+    .then(function (data) {
+      var ids = Array.isArray(data) ? data : (data && data.memories);
+      return Array.isArray(ids) && ids.length ? ids : KNOWN_IDS;
+    })
+    .catch(function () { return KNOWN_IDS; })
+    .then(loadAll);
+
+  function loadAll(ids) {
+    var safe = ids.filter(function (id) { return /^[A-Za-z0-9_-]+$/.test(id); });
+
+    return Promise.all(safe.map(function (id) {
+      return fetch("../memories/" + id + "/memory.json", { cache: "no-store" })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (m) { if (m && !m.id) { m.id = id; } return m; })
+        .catch(function () { return null; });
+    })).then(function (results) {
+      var memories = results.filter(Boolean);
+
+      if (!memories.length) {
+        state.innerHTML =
+          "No memories yet.<br><br>Capture one with <code>capture.py</code>, then " +
+          "run <code>process.py &lt;id&gt;</code> and it will appear here.";
+        return;
+      }
+
+      memories.forEach(function (m) { list.appendChild(card(m)); });
+      state.hidden = true;
+      list.hidden = false;
+      $("footer").hidden = false;
+    });
+  }
+
+  function card(m) {
+    var li = document.createElement("li");
+    li.className = "memory";
+
+    var approved  = m.approved === true;
+    var sensitive = m.sensitive === true;
+    // The rule demo.py enforces: approved AND not sensitive.
+    var willSurface = approved && !sensitive;
+
+    var h2 = document.createElement("h2");
+    var a = document.createElement("a");
+    a.href = "viewer.html?id=" + encodeURIComponent(m.id);
+    a.textContent = m.title || m.id;
+    h2.appendChild(a);
+    li.appendChild(h2);
+
+    if (m.place_name || m.place_type) {
+      li.appendChild(el("p", "place", [m.place_name || m.place_type, m.time_period]
+        .filter(Boolean).join(" · ")));
+    }
+
+    if (m.summary) { li.appendChild(el("p", "summary", m.summary)); }
+
+    var badges = document.createElement("div");
+    badges.className = "badges";
+    badges.appendChild(el("span", "badge " + (approved ? "approved" : "waiting"),
+      approved ? "Approved" : "Waiting for family"));
+    if (sensitive) {
+      badges.appendChild(el("span", "badge sensitive", "Sensitive"));
+    }
+    li.appendChild(badges);
+
+    // Spell out what the band does, so the rule is never a guess.
+    var row = document.createElement("p");
+    row.className = "surfacing";
+    var dot = document.createElement("span");
+    dot.className = "dot " + (willSurface ? "on" : "off");
+    row.appendChild(dot);
+
+    var text = document.createElement("span");
+    if (willSurface) {
+      text.innerHTML = "<b>The band will offer this</b> when she is at " +
+        escapeHtml(m.place_name || m.place_type || "this place") + ".";
+    } else if (sensitive) {
+      text.innerHTML = "<b>The band will never offer this.</b> Sensitive memories " +
+        "stay quiet, approved or not.";
+    } else {
+      text.innerHTML = "<b>Not yet offered.</b> It will stay quiet until someone " +
+        "approves it.";
+    }
+    row.appendChild(text);
+    li.appendChild(row);
+
+    return li;
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    n.className = cls;
+    n.textContent = text;
+    return n;
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s);
+    return d.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
