@@ -153,6 +153,26 @@ Granny's voice → the viewer opens at
 
 The family view is at `http://localhost:8000/web/family.html`.
 
+### If a key is missing
+
+The demo does not have to wait for every API key.
+
+**Granny's voice needs no key.** `capture.py <band> --id <id> --text no` records and
+saves `audio.wav` without calling Deepgram. Add the key later to get the transcript too;
+the recording is the part the demo plays.
+
+**The narrator line has an offline fallback.** `intro.mp3` is normally ElevenLabs, via
+`process.py`. Without that key, macOS can speak the `intro_line` itself:
+
+```bash
+LINE=$(python3 -c "import json;print(json.load(open('memories/sunday-park/memory.json'))['intro_line'])")
+say -v Samantha -r 145 -o /tmp/intro.aiff "$LINE"
+ffmpeg -i /tmp/intro.aiff -codec:a libmp3lame -b:a 128k memories/sunday-park/intro.mp3
+```
+
+The committed `intro.mp3` was made this way. Running `process.py` with an ElevenLabs key
+overwrites it with the real narrator voice, which sounds considerably warmer.
+
 ### About the 3D world
 
 `place_to_world.py` sends the reference photo **and** the `scene_prompt` to World Labs in
