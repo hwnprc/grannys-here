@@ -107,7 +107,9 @@ WORLDLABS_API_KEY=...
 
 ### Using the band
 
-- Connect only to **your own band number**, passed as an argument.
+- Connect only to **our own band number** — the number on the bag the band came in,
+  so band 7 is `Vexo-HACK-07`. Never another team's band, and never the `42` from the
+  kit's examples.
 - **One program at a time** — close the Vexo dashboard tab before running Python.
 - **Double-tap the band before every connect.** A blue blink means it is
   discoverable for 60 seconds.
@@ -118,8 +120,8 @@ WORLDLABS_API_KEY=...
 ## Running it
 
 ```bash
-# 1. Capture a story from band 42
-python3 capture.py 42 --id sunday-park
+# 1. Capture a story from the band (BAND is our own band number)
+python3 capture.py $BAND --id sunday-park
 
 # ...or without the band
 python3 capture.py --from-file story.wav --id sunday-park
@@ -131,13 +133,18 @@ python3 process.py sunday-park --location park --approve --atlas
 ```
 
 ```bash
-# 3. Serve the web pages from the repo root
+# 3. Generate the 3D world (photo + scene_prompt, ~5 min, uses credits)
+python3 atlas.py sunday-park
+```
+
+```bash
+# 4. Serve the web pages from the repo root
 python3 -m http.server 8000
 ```
 
 ```bash
-# 4. Run the demo loop (p = park, k = kitchen, q = quit)
-python3 demo.py 42
+# 5. Run the demo loop (p = park, k = kitchen, q = quit)
+python3 demo.py $BAND
 ```
 
 Then: press `p` → the band glows amber → tap it → the invitation plays, then
@@ -145,6 +152,22 @@ Granny's voice → the viewer opens at
 `http://localhost:8000/web/viewer.html?id=sunday-park`.
 
 The family view is at `http://localhost:8000/web/family.html`.
+
+### About the 3D world
+
+`atlas.py` sends the reference photo **and** the `scene_prompt` to World Labs in
+one request — the photo fixes the real geometry of the place, the prompt carries
+the season and mood from Granny's own words. Generation takes about five minutes
+and needs an account with purchased credits.
+
+The API returns Gaussian splats, a GLB mesh, a panorama and a link to the world;
+it never returns a video. `atlas.py` saves the panorama as `pano.jpg` and records
+`world_url` in `memory.json`. The viewer shows that panorama inline and offers
+"Walk through this place", which opens the live navigable world in a new tab —
+World Labs sends `X-Frame-Options: DENY`, so it cannot be embedded in the page.
+
+Useful flags: `--dry-run` (print the request, send nothing, no key needed),
+`--text-only` (prompt alone), `--model marble-1.1-plus` (larger outdoor worlds).
 
 ---
 

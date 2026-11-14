@@ -4,8 +4,14 @@ vexo-open-kit/
 # Secrets
 .env
 
-# Original voice recordings (large / private)
+# Original voice recordings (private — a real person's voice).
+# The band sends Ogg Opus, not WAV: see vexo-open-kit AGENTS.md rule 5.
 *.wav
+*.ogg
+*.opus
+
+# Full-resolution Atlas panorama (web-sized pano.jpg is committed instead)
+pano-full.jpg
 
 # Python
 __pycache__/
