@@ -1,0 +1,3 @@
+@import url('/base.css');
+
+.notification-controls{margin:18px 0 28px}.notification-controls p{max-width:650px}#quick-status{padding:12px;border-left:3px solid var(--green,#315d49);background:#eef2e9}

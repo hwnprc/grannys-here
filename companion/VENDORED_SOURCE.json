@@ -1,0 +1,70 @@
+{
+  "repository": "https://github.com/VexoAI-Org/vexo-open-kit",
+  "commit": "1e4291e2fa4896b1f603d3d4f0b009c483425da0",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha": "1579f7d85377bb527e79b021465cbe196f7f92cb"
+    },
+    {
+      "path": "LICENSE",
+      "sha": "53ef6cea984e2f73a9ccf64a1ffd2e2ebdcd3f1f"
+    },
+    {
+      "path": "dashboard/speech/deepgram.js",
+      "sha": "4d4d5d577e5371c37d4247330e43ba7cd033ea70"
+    },
+    {
+      "path": "docs/deepgram.md",
+      "sha": "fb605a087293280e9d21811f822b60d405ac27a9"
+    },
+    {
+      "path": "docs/speech.md",
+      "sha": "32f54dc18b39659ba503b17a6062b80e569100dc"
+    },
+    {
+      "path": "js/package.json",
+      "sha": "039f0423242796221e7decd0ede8fc52bd286d1b"
+    },
+    {
+      "path": "js/src/audio.js",
+      "sha": "61ed28b4c2828b060000602c94e9a10c5de4447f"
+    },
+    {
+      "path": "js/src/band.js",
+      "sha": "a184561b7b0c7bd1ade92265cb5a19c673fd5bd3"
+    },
+    {
+      "path": "js/src/codec.js",
+      "sha": "e870781c31e59142d9b2b9d45956299275c7eb1b"
+    },
+    {
+      "path": "js/src/index.js",
+      "sha": "a311e9f26b045ee8e5c7fe1fd90db1e5acad9e03"
+    },
+    {
+      "path": "js/src/stream-watch.js",
+      "sha": "549cda6bf9179902c2f543df3fdeac46db0b7771"
+    },
+    {
+      "path": "js/src/transport.js",
+      "sha": "83e05acbf5819ccb905d1bfb4144bdd41efc5a96"
+    },
+    {
+      "path": "js/src/transports/session-watch.js",
+      "sha": "9b8f1bc4ff239b435f6ba24c47c19d4ace8f3a27"
+    },
+    {
+      "path": "js/src/transports/sim.js",
+      "sha": "0d281adf584f3f7f60ca5e0eb29bd129d5b516a4"
+    },
+    {
+      "path": "js/src/transports/web-bluetooth.js",
+      "sha": "50dcb3b4bff9c3d9966a3d86b7521113cc10e95f"
+    },
+    {
+      "path": "js/src/transports/web-serial.js",
+      "sha": "01e51cc93972d6c35b6ec67480eb5d84fef4dc97"
+    }
+  ]
+}
