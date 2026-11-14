@@ -173,6 +173,18 @@ takes `image_prompt` **and** an optional `text_prompt`, so send the reference ph
 `scene_prompt` together: the photo fixes the real geometry, the prompt carries season and
 mood from her own words.
 
+`image_prompt` is an **object**, not a string — sending base64 is rejected with HTTP 422:
+
+```json
+{"source": "uri", "uri": "https://..."}
+{"source": "media_asset", "media_asset_id": "..."}
+```
+
+A local photo therefore needs three calls: `POST /marble/v1/media-assets:prepare_upload`
+(`{file_name, kind: "image", extension}`) returns a media asset id and a signed URL, then
+`PUT` the bytes to that URL with its `required_headers`, then generate with
+`source: "media_asset"`. `atlas.py` does all three.
+
 **marble.worldlabs.ai cannot be embedded** — it serves `X-Frame-Options: DENY` and
 `frame-ancestors 'none'`, so an iframe renders an empty refusal box. The viewer therefore
 shows `files.pano` inline and links out to `world_url` in a new tab. `files.world`

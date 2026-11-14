@@ -13,5 +13,8 @@ python-dotenv
 # Deepgram transcription + World Labs Atlas calls
 requests
 
-# Decode the band's Opus microphone packets into audio.wav (capture.py)
+# Decode the band's Opus microphone packets (capture.py)
 av
+
+# Downscales reference photos before sending them to World Labs
+pillow
