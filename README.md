@@ -153,6 +153,29 @@ Granny's voice → the viewer opens at
 
 The family view is at `http://localhost:8000/web/family.html`.
 
+### Using the band companion's recordings
+
+`companion/` (the browser app) records on the band with real GPS and exports
+`before-i-forget-memories.json`. `import_companion.py` turns each of its memories
+into a `memories/<id>/` folder this pipeline understands, carrying the real
+latitude, longitude, accuracy and radius across — the coordinates the keyboard
+trigger stands in for.
+
+```bash
+python3 import_companion.py ~/Downloads/before-i-forget-memories.json --dry-run
+python3 import_companion.py ~/Downloads/before-i-forget-memories.json
+```
+
+It derives `location_key` from the place name, so "Stow Lake, Golden Gate Park"
+becomes `park` and the demo's `p` key finds it.
+
+**Imports are never approved automatically.** The companion is a self-recording
+tool with no family gate; this pipeline has one. An imported memory shows on the
+family page as "Waiting for family" and the band stays silent at that place until
+someone approves it. The companion also keeps no audio — it streams to Deepgram
+and holds only counters — so record her voice separately with
+`capture.py 25 --id <id> --text no`.
+
 ### If a key is missing
 
 The demo does not have to wait for every API key.
