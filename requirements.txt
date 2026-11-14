@@ -1,0 +1,17 @@
+# Vexo band over Bluetooth
+bleak
+
+# AI memory extraction
+openai
+
+# Gentle narrator intro audio
+elevenlabs
+
+# API keys from .env
+python-dotenv
+
+# Deepgram transcription + World Labs Atlas calls
+requests
+
+# NOTE (Person 1): add anything vexo-open-kit/examples/python/ imports
+# (e.g. a Deepgram SDK) after reading vexo-open-kit/docs/api.md.

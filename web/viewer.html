@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Granny's Here</title>
+<style>
+  :root {
+    --bg:        #140f0b;
+    --bg-soft:   #1e1611;
+    --ink:       #f6ece1;
+    --ink-dim:   #c6b4a3;
+    --ink-faint: #8d7a69;
+    --amber:     #f0a850;
+    --amber-sq:  rgba(240, 168, 80, 0.14);
+    --line:      rgba(246, 236, 225, 0.14);
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- the place, behind everything ---- */
+
+  #world-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(1200px 700px at 70% 25%, #3a2a1c 0%, transparent 70%),
+      radial-gradient(900px 600px at 20% 80%, #2a1f18 0%, transparent 70%),
+      var(--bg);
+  }
+
+  #world {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transition: opacity 2.4s ease;
+  }
+
+  #world.visible { opacity: 1; }
+
+  /* keeps text readable over any frame of the video */
+  #scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(to right, rgba(20,15,11,0.94) 0%, rgba(20,15,11,0.78) 42%, rgba(20,15,11,0.30) 100%),
+      linear-gradient(to top, rgba(20,15,11,0.80) 0%, transparent 55%);
+  }
+
+  /* ---- the story, in front ---- */
+
+  main {
+    position: relative;
+    z-index: 2;
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 6vh 7vw;
+  }
+
+  .story {
+    max-width: 34rem;
+    animation: rise 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .place {
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 0 0 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .place::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 14px 3px rgba(240, 168, 80, 0.55);
+    animation: glow 3.4s ease-in-out infinite;
+    flex: none;
+  }
+
+  @keyframes glow {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+    line-height: 1.12;
+    font-weight: 400;
+    margin: 0 0 1.4rem;
+    letter-spacing: -0.01em;
+  }
+
+  .summary {
+    font-family: var(--serif);
+    font-size: clamp(1.15rem, 1.7vw, 1.4rem);
+    line-height: 1.6;
+    color: var(--ink);
+    margin: 0 0 2rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 2.4rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .meta li {
+    font-size: 0.86rem;
+    color: var(--ink-dim);
+    background: var(--amber-sq);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.34rem 0.85rem;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 1.02rem;
+    color: var(--bg);
+    background: var(--amber);
+    border: 0;
+    border-radius: 999px;
+    padding: 0.85rem 1.7rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    box-shadow: 0 6px 26px rgba(240, 168, 80, 0.22);
+  }
+
+  button:hover  { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(240, 168, 80, 0.3); }
+  button:active { transform: none; }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  .transcript {
+    margin-top: 2.6rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.3rem;
+  }
+
+  .transcript summary {
+    cursor: pointer;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    list-style: none;
+  }
+
+  .transcript summary::-webkit-details-marker { display: none; }
+  .transcript summary::before { content: "＋  "; }
+  .transcript[open] summary::before { content: "−  "; }
+  .transcript summary:hover { color: var(--ink-dim); }
+
+  .transcript p {
+    font-family: var(--serif);
+    color: var(--ink-dim);
+    font-size: 1.02rem;
+    margin: 1rem 0 0;
+    max-height: 30vh;
+    overflow-y: auto;
+    padding-right: 0.8rem;
+  }
+
+  .note {
+    margin-top: 2.4rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+
+  /* ---- states ---- */
+
+  .state {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--ink-dim);
+    max-width: 32rem;
+  }
+
+  .state code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92rem;
+    color: var(--amber);
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.15rem 0.45rem;
+  }
+
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation: none !important; transition: none !important; }
+    #world { opacity: 1; }
+  }
+
+  @media (max-width: 760px) {
+    main { padding: 8vh 7vw; }
+    #scrim { background: linear-gradient(to top, rgba(20,15,11,0.95) 0%, rgba(20,15,11,0.72) 60%, rgba(20,15,11,0.5) 100%); }
+  }
+</style>
+</head>
+<body>
+
+<div id="world-layer">
+  <video id="world" muted loop playsinline preload="auto" aria-hidden="true"></video>
+</div>
+<div id="scrim"></div>
+
+<main>
+  <!-- loading / error -->
+  <p class="state" id="state">Opening the memory…</p>
+
+  <!-- the memory -->
+  <article class="story" id="story" hidden>
+    <p class="place" id="place"></p>
+    <h1 id="title"></h1>
+    <p class="summary" id="summary"></p>
+    <ul class="meta" id="meta"></ul>
+
+    <button id="replay" type="button">Hear the story again</button>
+
+    <details class="transcript" id="transcript-box" hidden>
+      <summary>In her words</summary>
+      <p id="transcript"></p>
+    </details>
+
+    <p class="note" id="note" hidden></p>
+  </article>
+</main>
+
+<audio id="voice" preload="auto"></audio>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var state = $("state");
+  var story = $("story");
+  var voice = $("voice");
+  var world = $("world");
+  var replay = $("replay");
+
+  var id = new URLSearchParams(location.search).get("id");
+
+  function fail(html) {
+    state.innerHTML = html;
+    state.hidden = false;
+    story.hidden = true;
+  }
+
+  if (!id) {
+    fail("No memory chosen.<br><br>Open this page with a memory id, for example " +
+         "<code>viewer.html?id=sunday-park</code>.");
+    return;
+  }
+
+  // Keep the id to a safe slug: this builds a path.
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+    fail("That memory id isn't valid.<br><br>Ids may use letters, numbers, " +
+         "hyphens and underscores only.");
+    return;
+  }
+
+  var base = "../memories/" + id + "/";
+
+  fetch(base + "memory.json", { cache: "no-store" })
+    .then(function (res) {
+      if (!res.ok) { throw new Error("HTTP " + res.status); }
+      return res.json();
+    })
+    .then(render)
+    .catch(function (err) {
+      fail("Couldn't open <code>" + id + "</code>.<br><br>" +
+           "Check that <code>memories/" + id + "/memory.json</code> exists and that " +
+           "you're serving the repo root with <code>python3 -m http.server 8000</code>." +
+           "<br><br><span style=\"font-size:0.8rem\">(" + err.message + ")</span>");
+    });
+
+  function render(m) {
+    var files = m.files || {};
+
+    document.title = (m.title || "A memory") + " — Granny's Here";
+
+    // place line
+    $("place").textContent = m.place_name || m.place_type || "A place she loved";
+
+    $("title").textContent = m.title || "A memory";
+    $("summary").textContent = m.summary || "";
+    if (!m.summary) { $("summary").hidden = true; }
+
+    // meta chips: people, when, season, feeling
+    var chips = [];
+    var people = Array.isArray(m.people) ? m.people.filter(Boolean) : [];
+    if (people.length) { chips.push("With " + listify(people)); }
+    if (m.time_period)  { chips.push(m.time_period); }
+    if (m.season)       { chips.push(cap(m.season)); }
+    if (m.emotion)      { chips.push(cap(m.emotion)); }
+
+    var meta = $("meta");
+    chips.forEach(function (text) {
+      var li = document.createElement("li");
+      li.textContent = text;
+      meta.appendChild(li);
+    });
+    if (!chips.length) { meta.hidden = true; }
+
+    // her own voice
+    var audioFile = files.audio || "audio.wav";
+    voice.src = base + audioFile;
+
+    voice.addEventListener("ended", function () {
+      replay.textContent = "Hear the story again";
+    });
+
+    voice.addEventListener("error", function () {
+      replay.disabled = true;
+      replay.textContent = "Recording not found";
+      replay.style.opacity = "0.5";
+      replay.style.cursor = "default";
+    });
+
+    replay.addEventListener("click", function () {
+      if (voice.paused) {
+        voice.play().then(function () {
+          replay.textContent = "Pause";
+        }).catch(function () {
+          replay.textContent = "Couldn't play the recording";
+        });
+      } else {
+        voice.pause();
+        replay.textContent = "Hear the story again";
+      }
+    });
+
+    // transcript, quietly available
+    if (m.transcript) {
+      $("transcript").textContent = m.transcript;
+      $("transcript-box").hidden = false;
+    }
+
+    // the 3D world
+    var worldFile = files.world || "world.mp4";
+    if (/\.(mp4|webm|mov)$/i.test(worldFile)) {
+      world.src = base + worldFile;
+      world.addEventListener("canplay", function () {
+        world.classList.add("visible");
+        var p = world.play();
+        if (p && p.catch) { p.catch(function () { /* autoplay blocked; still shown */ }); }
+      });
+      world.addEventListener("error", function () {
+        showNote("The 3D world for this place hasn't been generated yet.");
+      });
+    } else if (worldFile) {
+      // a splat or other non-video world — not rendered here yet
+      showNote("This place has a 3D world file (" + worldFile + ") that this viewer " +
+               "doesn't render yet.");
+    }
+
+    state.hidden = true;
+    story.hidden = false;
+  }
+
+  function showNote(text) {
+    var note = $("note");
+    note.textContent = text;
+    note.hidden = false;
+  }
+
+  function cap(s) {
+    return String(s).charAt(0).toUpperCase() + String(s).slice(1);
+  }
+
+  function listify(arr) {
+    if (arr.length === 1) { return arr[0]; }
+    if (arr.length === 2) { return arr[0] + " and " + arr[1]; }
+    return arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1];
+  }
+})();
+</script>
+</body>
+</html>

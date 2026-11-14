@@ -1,0 +1,17 @@
+# Reference kit — cloned locally, never committed, never edited
+vexo-open-kit/
+
+# Secrets
+.env
+
+# Original voice recordings (large / private)
+*.wav
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store

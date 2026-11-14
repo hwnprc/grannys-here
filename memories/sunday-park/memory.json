@@ -1,0 +1,23 @@
+{
+  "id": "sunday-park",
+  "title": "Sunday visits to the park",
+  "summary": "After church every Sunday, Granny walked her daughter down to the lake in Golden Gate Park to feed the ducks and rent the little boats.",
+  "transcript": "Oh, we went every Sunday. Every single Sunday after church I'd take her down to the lake in the park, the one with the little bridge and the boats you can rent. She was maybe six, seven. She always wanted to feed the ducks, and I always told her not to get too close to the edge, and she never listened, not once. We'd walk all the way around and she'd be asleep on my shoulder before we got to the car. The leaves would be down by October and the whole path went gold.",
+  "people": ["her daughter"],
+  "place_name": "Stow Lake, Golden Gate Park",
+  "place_type": "park",
+  "location_key": "park",
+  "time_period": "1980s",
+  "season": "autumn",
+  "emotion": "warm, nostalgic",
+  "sensitive": false,
+  "approved": true,
+  "intro_line": "You used to come here with your daughter every Sunday. Would you like to hear that story?",
+  "scene_prompt": "A quiet lake in a city park on a sunny autumn afternoon. A small stone bridge arches over still green water. Rowboats are tied at a wooden dock. Tall eucalyptus and cypress ring the path, and fallen golden leaves cover the ground. Warm low afternoon light, soft haze, peaceful and unhurried.",
+  "files": {
+    "audio": "audio.wav",
+    "intro": "intro.mp3",
+    "world": "world.mp4"
+  },
+  "created_at": "2026-11-14T15:00:00-08:00"
+}
