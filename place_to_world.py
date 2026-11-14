@@ -153,9 +153,10 @@ def shrink_pano(path):
     if max(img.size) <= MAX_PANO_EDGE:
         return
     full = path.with_name("pano-full.jpg")      # git-ignored; kept locally
-    if not full.exists():
-        path.rename(full)
-        img = Image.open(full)
+    if full.exists():
+        full.unlink()                           # a rerun must not keep the old world's copy
+    path.rename(full)
+    img = Image.open(full)
     img.thumbnail((MAX_PANO_EDGE, MAX_PANO_EDGE), Image.LANCZOS)
     img.convert("RGB").save(path, "JPEG", quality=86, optimize=True)
     print("· panorama scaled to %dx%d (%.1f MB); full size kept as %s"

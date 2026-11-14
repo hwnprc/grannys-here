@@ -20,9 +20,15 @@
     "audio": "audio.wav",
     "intro": "intro.mp3",
     "pano": "pano.jpg",
-    "world": "world.mp4"
+    "world": "world.mp4",
+    "splat": "world.spz",
+    "thumbnail": "world_thumb.jpg"
   },
   "created_at": "2026-11-14T15:00:00-08:00",
-  "world_url": "https://marble.worldlabs.ai/world/cfa0716c-16f7-41fc-9f8f-352867939f43",
-  "world_id": "cfa0716c-16f7-41fc-9f8f-352867939f43"
+  "world_url": "https://marble.worldlabs.ai/world/4a37eb1b-10f9-427b-ab38-32103e48ce89",
+  "world_id": "4a37eb1b-10f9-427b-ab38-32103e48ce89",
+  "world_semantics": {
+    "metric_scale_factor": 1.2289602,
+    "ground_plane_offset": 0.62548083
+  }
 }
