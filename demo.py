@@ -1,7 +1,7 @@
 """The Granny's Here demo loop.
 
-    python3 demo.py 42            band 42 over Bluetooth
-    python3 demo.py 42 --usb      band 42 on the USB cable
+    python3 demo.py 25            band 25 over Bluetooth
+    python3 demo.py 25 --usb      band 25 on the USB cable
     python3 demo.py --sim         pretend band (it "taps" by itself every few seconds)
 
 Before you start, in another terminal at the repo root:
@@ -35,6 +35,8 @@ import webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+BAND = 25          # our band, Vexo-HACK-25. The pretend band uses it too:
+                   # vexo-open-kit AGENTS.md rule 1 forbids the example number 42.
 sys.path.insert(0, str(ROOT / "vexo-open-kit" / "python"))
 sys.path.insert(0, str(ROOT / "vexo-open-kit" / "examples" / "python"))
 
@@ -47,7 +49,7 @@ KEYS = {"p": "park", "k": "kitchen", "c": "church", "h": "home"}
 
 def parse_args():
     p = argparse.ArgumentParser(description="Granny's Here demo loop.")
-    p.add_argument("number", nargs="?", type=kit.band_number, help="the number on your band, e.g. 42")
+    p.add_argument("number", nargs="?", type=kit.band_number, help="the number on your band, e.g. 25")
     p.add_argument("--sim", dest="transport", action="store_const", const="sim", default="ble",
                    help="pretend band, no hardware")
     p.add_argument("--usb", dest="transport", action="store_const", const="serial",
@@ -57,7 +59,7 @@ def parse_args():
     p.add_argument("--no-browser", action="store_true", help="do not open the viewer")
     a = p.parse_args()
     if a.number is None and a.transport == "ble":
-        p.error("add your band number (e.g. 42), or --sim for a pretend band")
+        p.error("add your band number (e.g. 25), or --sim for a pretend band")
     return a
 
 
@@ -147,7 +149,7 @@ def main():
 
     if args.transport != "sim":
         print("\nDouble-tap the band now so it can be found (blue blink)...")
-    band = Band.connect(args.number, args.transport)
+    band = Band.connect(args.number or BAND, args.transport)
     print("✓ connected to %s" % band.name)
 
     tapped = threading.Event()

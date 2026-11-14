@@ -1,7 +1,7 @@
 """Record one of Granny's stories from the Vexo Open band.
 
-    python3 capture.py 42 --id sunday-park          band 42 over Bluetooth
-    python3 capture.py 42 --id sunday-park --usb    band 42 on the USB cable
+    python3 capture.py 25 --id sunday-park          band 25 over Bluetooth
+    python3 capture.py 25 --id sunday-park --usb    band 25 on the USB cable
     python3 capture.py --sim --id test              pretend band (plays the kit's sample voice)
     python3 capture.py --id sunday-park --transcript "Every Sunday I took my daughter..."
                                                     no band at all: just save the text
@@ -25,6 +25,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+BAND = 25          # our band, Vexo-HACK-25. The pretend band uses it too:
+                   # vexo-open-kit AGENTS.md rule 1 forbids the example number 42.
 KIT = ROOT / "vexo-open-kit"
 sys.path.insert(0, str(KIT / "python"))                # the band library
 sys.path.insert(0, str(KIT / "examples" / "python"))   # speech.py, ogg_opus.py, kit.py
@@ -41,7 +43,7 @@ SAVED = "#3ddc84"      # green flash: story saved
 
 def parse_args():
     p = argparse.ArgumentParser(description="Record a story from the Vexo band.")
-    p.add_argument("number", nargs="?", type=kit.band_number, help="the number on your band, e.g. 42")
+    p.add_argument("number", nargs="?", type=kit.band_number, help="the number on your band, e.g. 25")
     p.add_argument("--sim", dest="transport", action="store_const", const="sim", default="ble",
                    help="pretend band, no hardware")
     p.add_argument("--usb", dest="transport", action="store_const", const="serial",
@@ -53,7 +55,7 @@ def parse_args():
     p.add_argument("--transcript", default=None, help="no band: save this text as the transcript and stop")
     a = p.parse_args()
     if a.transcript is None and a.number is None and a.transport == "ble":
-        p.error("add your band number (e.g. 42), or --sim, or --transcript \"...\"")
+        p.error("add your band number (e.g. 25), or --sim, or --transcript \"...\"")
     return a
 
 
@@ -102,7 +104,7 @@ def main():
         connect_opts = {"audio_packets": audio.ogg_packets(args.replay or kit.SAMPLE_SPEECH)}
     else:
         print("Double-tap the band now so it can be found (blue blink)...")
-    band = Band.connect(args.number, args.transport, **connect_opts)
+    band = Band.connect(args.number or BAND, args.transport, **connect_opts)
     print("✓ connected to %s" % band.name)
 
     toggle = threading.Event()               # set by a double-tap or by Enter
