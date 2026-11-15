@@ -412,9 +412,17 @@
     // Marble sends X-Frame-Options: DENY, so its world page cannot be iframed.
     // Inline backdrop comes from the panorama (or a recorded video); the live,
     // navigable world opens in a new tab.
-    // Live Marble world, if we have one.
-    if (m.world_url) {
-      var link = $("world-link");
+    // Prefer our own in-page world: Marble cannot be embedded (X-Frame-Options:
+    // DENY), but we have the same splat, so we render it here instead of
+    // sending her family off to another site.
+    var link = $("world-link");
+    if (files.splat) {
+      link.href = "world.html?id=" + encodeURIComponent(id);
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
+      link.textContent = "Walk through this place";
+      link.hidden = false;
+    } else if (m.world_url) {
       link.href = m.world_url;
       link.hidden = false;
     }
