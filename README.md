@@ -227,6 +227,7 @@ send nothing), `--draft` (faster and cheaper), `--place` / `--prompt` (no `memor
 | Narrator voice | ElevenLabs |
 | 3D worlds | World Labs Atlas |
 | Web | Static HTML + CSS, no build step, served with `python3 -m http.server` |
+| Band companion | `companion/` — a separate browser app (Node, no dependencies) that records on the band with real GPS and watches for a genuine return |
 
 ---
 
