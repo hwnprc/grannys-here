@@ -356,6 +356,61 @@ document.querySelector('#memory-form button[type=submit]')?.addEventListener('cl
   if (!$('latitude').value || !$('longitude').value) { const d = document.querySelector('.coords'); if (d) d.open = true; }
 });
 
+// ---------- reminders now and then ----------
+// A return is one trigger. Time is another: every so often, offer one kept memory —
+// preferring places that are already built — through his own reminder queue, so it
+// arrives as the same dialog (with the place beneath the words) and the same OS
+// notification he already raises. Phones show that notification as a system banner
+// while this page is open; a push that wakes a locked phone needs a service worker
+// and a push server, which this does not have.
+const TIMED_KEY = 'before-i-forget.worlds.timed';      // minutes, "0" = off
+const timedSel = $('world-timed');
+let timedHandle = null, lastTimedId = null, timedPendingId = null, nextTimedAt = 0;
+
+function pickForReminder() {
+  const ms = readMemories(); if (!ms.length) return null;
+  const worlds = readWorlds();
+  const built = ms.filter(m => worlds[m.id]?.splat_url);
+  const pool = (built.length ? built : ms).filter(m => m.id !== lastTimedId);
+  const list = pool.length ? pool : (built.length ? built : ms);
+  return list[Math.floor(Math.random() * list.length)];
+}
+function fireTimedReminder() {
+  const m = pickForReminder(); if (!m) return false;
+  if (!window.beforeIForget?.enqueueReminder) return false;
+  if (document.getElementById('return-dialog')?.open) return false;   // never stack on an open one
+  lastTimedId = m.id; timedPendingId = m.id;
+  window.beforeIForget.enqueueReminder(m, true);                       // true: never touches real GPS state
+  return true;
+}
+function applyTimed() {
+  clearInterval(timedHandle); timedHandle = null;
+  const mins = Number(timedSel?.value || 0);
+  try { localStorage.setItem(TIMED_KEY, String(mins)); } catch {}
+  if (mins > 0) {
+    nextTimedAt = Date.now() + mins * 60000;
+    timedHandle = setInterval(() => { nextTimedAt = Date.now() + mins * 60000; fireTimedReminder(); }, mins * 60000);
+  } else nextTimedAt = 0;
+  const st = $('world-timed-status');
+  if (st) st.textContent = mins > 0
+    ? `A memory will be offered about every ${mins} minute${mins === 1 ? '' : 's'} while this page is open.`
+    : 'Off. Memories are offered only when you return to their place.';
+  updateFab();
+}
+if (timedSel) {
+  timedSel.value = localStorage.getItem(TIMED_KEY) ?? '20';          // gentle default; an explicit Off is kept
+  if (![...timedSel.options].some(o => o.value === timedSel.value)) timedSel.value = '20';
+  timedSel.addEventListener('change', applyTimed);
+  $('world-timed-now')?.addEventListener('click', () => { if (!fireTimedReminder()) say('Keep a memory first — then there is something to be reminded of.', true); });
+}
+// label a timed reminder honestly: it is neither a return nor a location simulation
+if (dialog) new MutationObserver(() => {
+  if (!dialog.open || !timedPendingId) return;
+  const m = reminderMemory();
+  if (m && m.id === timedPendingId) $('return-mode').textContent = 'A MEMORY, NOW AND THEN';
+  timedPendingId = null;
+}).observe(dialog, { attributes: true, attributeFilter: ['open'] });
+
 // ---------- the reminder is one tap away, everywhere ----------
 const fab = $('remind-fab');
 function fmtLeft(ms) { const s = Math.max(0, Math.round(ms / 1000)); const m = Math.floor(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : m > 0 ? `${m}m ${String(s % 60).padStart(2, '0')}s` : `${s}s`; }
@@ -364,7 +419,7 @@ function updateFab() {
   fab.hidden = readMemories().length === 0;                  // nothing to be reminded of yet
   const cd = $('remind-countdown');
   const mins = Number(timedSel?.value || 0);
-  cd.textContent = mins > 0 && nextTimedAt ? `next in ${fmtLeft(nextTimedAt - Date.now())}` : 'only on return';
+  if (cd) cd.textContent = mins > 0 && nextTimedAt ? `next in ${fmtLeft(nextTimedAt - Date.now())}` : 'only on return';
 }
 setInterval(updateFab, 1000);
 new MutationObserver(updateFab).observe($('memory-list'), { childList: true });
@@ -377,7 +432,7 @@ $('remind-timing')?.addEventListener('click', () => {
   $('world').scrollIntoView({ behavior: 'smooth', block: 'start' });
   setTimeout(() => timedSel?.focus(), 500);
 });
-updateFab();
+if (timedSel) applyTimed(); else updateFab();               // after updateFab exists: no use-before-define
 
 // ---------- a first reminder, by itself, shortly after arriving ----------
 // Once per visit, about half a minute in: if something is kept and no one is
@@ -387,13 +442,14 @@ const FIRST_KEY = 'before-i-forget.worlds.firstShown';
 function busy() {
   const a = document.activeElement; const tag = a?.tagName;
   const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-  const recording = /recording|listening|starting|stopping/i.test($('recording-status')?.textContent || '');
+  // his idle text is "Microphone off. Up to 2 minutes per recording." — match his live states, not the word
+  const rs = $('recording-status');
+  const recording = !!rs && (rs.classList.contains('recording') || /^(RECORDING|Connecting|Stopping)/.test(rs.textContent.trim()));
   return typing || recording || document.getElementById('return-dialog')?.open || document.getElementById('edit-dialog')?.open;
 }
 function firstReminder(attempt = 0) {
   if (sessionStorage.getItem(FIRST_KEY)) return;
-  if (!readMemories().length) { if (attempt < 20) setTimeout(() => firstReminder(attempt + 1), 15000); return; }
-  if (busy() || document.hidden) { if (attempt < 20) setTimeout(() => firstReminder(attempt + 1), 15000); return; }
+  if (!readMemories().length || busy() || document.hidden) { if (attempt < 20) setTimeout(() => firstReminder(attempt + 1), 15000); return; }
   try { sessionStorage.setItem(FIRST_KEY, '1'); } catch {}
   fireTimedReminder();
 }
