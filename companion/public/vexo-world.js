@@ -50,6 +50,28 @@ sel.addEventListener('change', () => {
 autoBox.checked = localStorage.getItem(AUTO_KEY) !== '0';
 autoBox.addEventListener('change', () => { try { localStorage.setItem(AUTO_KEY, autoBox.checked ? '1' : '0'); } catch {} });
 
+// Some stories already have a world. The demo is Granny's Stow Lake story, and that
+// place was built from these exact words earlier (memories/sunday-park): point at
+// it instead of building it again, so the demo is instant and spends no credits.
+const KNOWN_WORLDS = {
+  'granny-park-v1': {
+    status: 'ready',
+    splat_url: '/memories/sunday-park/world.spz',
+    pano_url: '/memories/sunday-park/pano.jpg',
+    thumbnail_url: '/memories/sunday-park/world_thumb.jpg',
+    world_url: 'https://marble.worldlabs.ai/world/4a37eb1b-10f9-427b-ab38-32103e48ce89',
+    caption: 'A serene lakeside setting within a city park, under the gentle illumination of a sunny autumn afternoon.',
+  },
+};
+function seedKnownWorld(m) {
+  const k = KNOWN_WORLDS[m.conversation?.sourceId];
+  if (!k || readWorlds()[m.id]?.splat_url) return false;
+  writeWorld(m.id, k);
+  say(`This place was already built from these words — step inside below.`);
+  show(k.splat_url, k).catch(e => say(e.message, true));
+  return true;
+}
+
 // ---------- building ----------
 async function api(path, init) {
   const r = await fetch(path, init);
@@ -83,7 +105,7 @@ async function buildFor(memoryId, text, { draft = true, auto = false } = {}) {
       setCardLine(memoryId, `Building the place… ${s}s`);
       await new Promise(r => setTimeout(r, 5000));
     }
-    if (memoryId) writeWorld(memoryId, { status: 'ready', splat_url: result.splat_url || null, world_url: result.world_url || null, pano_url: result.pano_url || null, caption: result.caption || null });
+    if (memoryId) writeWorld(memoryId, { status: 'ready', splat_url: result.splat_url || null, world_url: result.world_url || null, pano_url: result.pano_url || null, thumbnail_url: result.thumbnail_url || null, caption: result.caption || null });
     if (result.world_url) { walkLink.href = result.world_url; walkLink.hidden = false; }
     if (result.caption) caption.textContent = 'The model saw: ' + result.caption.slice(0, 220);
     if (!result.splat_url) { say('The place was built, but no 3D file came back. The World Labs link above still works.'); return; }
@@ -186,6 +208,7 @@ new MutationObserver(() => {
   const words = wordsFor(m);
   if (words.length < 10) return;
   sel.value = m.id; prompt.value = words; prompt.readOnly = true;
+  if (seedKnownWorld(m)) { decorateCards(); return; }      // already built: nothing to spend
   buildFor(m.id, words, { draft: true, auto: true }).catch(() => {});
 }).observe($('memory-list'), { childList: true });
 
@@ -226,7 +249,8 @@ function decorateReminder() {
     $('world').scrollIntoView({ behavior: 'smooth' });
   };
   if (w?.splat_url) {
-    img.hidden = !w.pano_url; if (w.pano_url) img.src = w.pano_url;
+    const pic = w.pano_url || w.thumbnail_url;         // draft worlds return no panorama
+    img.hidden = !pic; if (pic) img.src = pic;
     cap.textContent = 'This place was built from the words you kept here.';
     go.textContent = 'Step inside this place ↗';
   } else if (w?.status === 'building') {
