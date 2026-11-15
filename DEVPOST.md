@@ -1,120 +1,129 @@
 # Devpost submission — Granny's Here
 
-Copy each section into the matching Devpost field. Everything here is true of the
-repository as submitted; check the two marked **[confirm]** before posting.
+Paste each section into the matching Devpost field. Everything here is true of the
+site and repository as submitted.
 
 ---
 
-## Elevator pitch (200 chars)
+## Elevator pitch (under 200 chars)
 
-Granny tells her stories to a wristband. When she returns to the place they happened,
-it glows — one tap plays her own voice, and her family can walk the place in 3D.
+Granny tells a story to her wristband. Her family keeps it, the place she described
+is built in 3D from her own words, and when she returns there — or now and then — it
+comes back to her.
 
 ---
 
 ## Inspiration
 
 For people with early-to-mid stage dementia, memories aren't gone — they're hard to
-reach. Almost every memory app is passive: you have to already know what to search
-for, which is precisely the thing that has become difficult. And family stories
-disappear for a second reason nobody builds for — nothing captures the *places* they
-happened in. The lake, the kitchen, the pew by the window are the first things lost
-when someone moves into care.
+reach. Most memory apps are passive: you have to already know what to search for, which
+is precisely the thing that has become difficult. And family stories disappear for a
+second reason nobody builds for: nothing captures the *places* they happened in. The
+lake, the kitchen, the pew by the window are the first things lost when someone moves
+into care.
 
 So we stopped thinking about an app you open, and started thinking about a place you
 stand in.
 
 ## What it does
 
-Granny wears the Vexo band and tells her stories out loud, the way she always has. AI
-turns each story into a structured memory tied to a place.
+**One site: https://grannys-here.vercel.app**
 
-When she is near that place again, the band glows warm amber. One tap plays a gentle
-invitation in a calm narrator's voice — *"You used to come here with your daughter
-every Sunday. Would you like to hear that story?"* — and then her own recorded voice,
-telling it herself. Her family can open the place as a navigable 3D world, generated
-from one photograph and her own description of it.
+1. **She talks.** Wearing the Vexo band, Granny tells a story the way she always has.
+   The band streams audio over Bluetooth; it is written down live in the browser.
+2. **It becomes a memory.** The words are kept with the place they belong to. Nothing is
+   invented: the memory is her full conversation, word for word.
+3. **The place is built — from her words.** The moment a memory is kept, World Labs
+   builds a walkable 3D world from the transcript, and it is rendered *on the page*,
+   not on another site. No hand-written prompt, no photo needed: a story about a
+   kitchen, a church or a bakery becomes somewhere you can look around.
+4. **It comes back to her.** When she returns to the place, a reminder opens with a
+   gentle invitation in her family's words and the place beneath them — *Step inside*.
+   Reminders also arrive now and then on a timer, and a **Remind me** button is one tap
+   away on every screen, phone included.
+5. **Her family decides what surfaces.** Nothing is offered automatically until approved,
+   and memories about loss, illness or conflict never auto-trigger — approved or not.
 
-Three rules shaped every screen:
-
-- **Invite, never quiz.** The band offers a story. It never tests her, never corrects her.
-- **Family approves what can surface.** Nothing reaches her automatically until someone
-  approves it, and memories about loss, illness or conflict never auto-trigger at all —
-  approved or not.
-- **Be honest about listening.** The band's light is solid blue whenever the mic is on,
-  and the hardware refuses to let us override it.
+The memory box is never empty on a first visit: four memories and their built places
+are there to try — Granny's park, a kitchen, a church, a café — and a one-click
+*Show me with Granny's story* keeps her Stow Lake memory and steps straight into it.
 
 ## How we built it
 
-- **Vexo Open band** over Bluetooth — microphone, tap detection, colour LED
-- **Deepgram** for speech-to-text, **OpenAI** for structured memory extraction
-- **ElevenLabs** for the narrator's invitation — deliberately *not* a clone of Granny;
-  her voice is only ever her real recording
-- **World Labs Marble** for the 3D world, from a reference photo **plus** her own words
-- **Static HTML/CSS** for the family-facing pages. No build step, no CDN — a venue's
-  wifi cannot break the demo
-- A second **browser companion** (Node, 42 tests) that records on the band with real
-  GPS and watches for a genuine departure and return
-
-The two halves are bridged: `import_companion.py` converts the companion's exports into
-the family pipeline, carrying real latitude, longitude, accuracy and radius across —
-and never marks an import approved, so the family gate survives the bridge.
+- **Vexo Open band** over Web Bluetooth — microphone, taps, colour LED
+- **Deepgram** for live speech-to-text in the browser
+- **World Labs Marble** for the 3D world, generated from the transcript (with a reference
+  photo when there is one); **Spark**, World Labs' own Gaussian-splat renderer, draws it
+  inside the page
+- **Vercel** — static site plus three serverless functions that keep the World Labs key
+  server-side and proxy the splat so the page fetches it same-origin
+- **Plain HTML, CSS and ES modules.** No framework, no build step. 47 automated tests on
+  the capture, location and reminder logic
+- **Type for the people it's for:** Atkinson Hyperlegible (drawn for low-vision readers),
+  Bricolage Grotesque, IBM Plex Mono
+- A Python pipeline alongside it (`capture.py`, `process.py`, `place_to_world.py`,
+  `demo.py`) that drives the band locally, with OpenAI and ElevenLabs for the structured
+  memory and a narrator voice
 
 ## Challenges we ran into
 
 Most of our time went on things the documentation didn't tell us.
 
-- **The world API returns no video.** Our architecture assumed an `.mp4`. It returns
-  Gaussian splats, a GLB mesh, a panorama and a hosted link — and nothing else. We
-  rebuilt the viewer around the panorama with the walkable world one click away.
-- **`image_prompt` is an object, not a string.** A base64 string gets HTTP 422. The live
-  API also returns `media_asset_id` and `world_id` where the docs show `id`.
-- **The world page refuses to be embedded** — `X-Frame-Options: DENY`. An iframe renders
-  an empty box, which we found by checking the headers rather than at demo time.
-- **Sharing can only be set at creation.** There is no update endpoint, so our first
-  world was permanently private — *"You don't have permission to view this world"* for
-  anyone but us. We regenerated it public and verified it in a signed-out browser.
-- **The band refuses LED commands while the microphone is on**, so "show listening with
-  the light" was impossible — the hardware's own blue light is the indicator.
-- **The band records Ogg Opus, not WAV.** Our `.gitignore` only covered `*.wav`, which
-  would have committed a real person's voice to a public repository.
+- **The world API returns no video.** It returns Gaussian splats, a GLB mesh, a panorama
+  and a hosted link — nothing else. We rebuilt around the splat and render it ourselves.
+- **The world page cannot be embedded** — `X-Frame-Options: DENY`. Found by reading the
+  headers, not at demo time.
+- **Sharing can only be set at creation.** No update endpoint exists, so our first world
+  was permanently private. We regenerated it public and checked in a signed-out browser.
+- **`image_prompt` is an object, not a string**; the live API names fields differently
+  from the docs (`media_asset_id`, `world_id`); inline images are capped at 10 MB.
+- **The band refuses LED commands while its microphone is on**, so the hardware's own
+  blue light is the listening indicator — we couldn't override it, and shouldn't.
+- **The band records Ogg Opus, not WAV**, and our `.gitignore` would have committed a
+  real person's voice to a public repository. Caught and fixed.
+- **One Bluetooth connection at a time.** A band held by one tab is invisible to
+  everything else. We lost an hour to this before reading the rule properly.
 
 ## Accomplishments we're proud of
 
-The safety model is enforced in three independent places — the demo loop, the family
-page and the viewer — and we tested the awkward case rather than the easy one: a memory
-that is *approved **and** sensitive* still reads "The band will never offer this."
+The safety model is enforced in three independent places and we tested the awkward
+case rather than the easy one: a memory that is *approved **and** sensitive* still reads
+"The band will never offer this."
 
-And the 3D world genuinely came from both inputs. The photograph fixed the real geometry
-of the lake; her transcript added the stone bridge she mentioned, which the photo doesn't
-show.
+The 3D world genuinely comes from her words. For Stow Lake the photograph fixed the lake
+and the boathouse, and her transcript added the stone bridge the photo doesn't show. For
+a kitchen and a church there was no photo at all — the counter under the window, the
+jacaranda on the church steps, all of it came out of the sentences.
+
+And it works on a first visit, on any device, with nothing to set up.
 
 ## What we learned
 
-Read the headers, not the marketing. Half our real blockers — the missing video, the
-refused iframe, the permanent privacy setting — were findable in minutes with `curl -I`
-and a careful read of a schema, and each would have been fatal if found at 5:40pm.
+Read the headers, not the marketing. Half our real blockers were findable in minutes
+with `curl -I` and a careful read of a schema — and each would have been fatal at 5:40pm.
+
+Design for the actual reader. We threw out a cream-and-serif look that read as
+machine-made, and chose a typeface drawn for low-vision eyes, 17px body text, and a
+form that asks "What do you call this place?" instead of "Latitude".
 
 ## What's next
 
-Real GPS on a phone instead of a laptop keystroke. Rendering the Gaussian splat inline
-so the family walks the place without leaving the page. And a caregiver view that shows
-which memories still bring her joy, so families can stop offering the ones that don't.
+A push that wakes a locked phone (service worker, push server, home-screen install on
+iPhone). Real GPS on a phone instead of a laptop. A caregiver view that shows which
+memories still bring her joy, so families can stop offering the ones that don't.
 
 ## Built with
 
-`python` `javascript` `bluetooth` `vexo-open` `deepgram` `openai` `elevenlabs`
-`world-labs-marble` `gaussian-splatting` `html` `css` `node`
+`javascript` `web-bluetooth` `vexo-open` `deepgram` `world-labs-marble`
+`gaussian-splatting` `spark` `three.js` `vercel` `python` `openai` `elevenlabs`
 
 ## Links
 
-- **Try it live:** https://grannys-here.vercel.app — one site: band companion at the root, **Step inside** builds a 3D place from kept words, memory viewer and family page under /web/
+- **Try it live:** https://grannys-here.vercel.app
 - **Repository:** https://github.com/hwnprc/grannys-here
-- **3D world:** https://marble.worldlabs.ai/world/4a37eb1b-10f9-427b-ab38-32103e48ce89
-- **Demo video:** **[confirm]** add the link once uploaded
-
-**[confirm]** Record Granny's real story before filming — `capture.py 25 --id sunday-park
---text no`. Until then `audio.wav` is a stand-in recording from the Vexo kit, not her.
+- **A world built from a story alone (no photo):**
+  https://marble.worldlabs.ai/world/50dd409d-3ec5-471e-bfc4-24a49ae9553d
+- **Demo video:** add the link once uploaded
 
 ---
 
@@ -122,11 +131,11 @@ which memories still bring her joy, so families can stop offering the ones that 
 
 | # | Shot | Say |
 |---|---|---|
-| 1 | Band on a wrist, someone telling a short story about the lake | "Granny just talks. The band is listening — that's what the blue light means." |
-| 2 | `memory.json` on screen | "AI turns it into a memory tied to a place — and marks whether it's too sensitive to ever surface." |
-| 3 | `family.html` | "Her family decides what can reach her. Nothing surfaces until someone approves it." |
-| 4 | Press `p`, band glows amber | "She arrives at the park. The band glows. It doesn't speak, it doesn't buzz — it waits." |
-| 5 | Tap the band | Let the invitation and her voice play. **Say nothing over this.** |
-| 6 | Viewer opens, then "Walk through this place" | "And the family can stand in it again." |
+| 1 | Band on a wrist, "Record & remember here", someone tells a short story | "Granny just talks. The blue light means it's listening." |
+| 2 | The words appearing live, then *Keep this memory* | "It's written down and kept with the place." |
+| 3 | The card: *Building the place…* → *A place is built from these words* | "And the place she described is built — from her words." |
+| 4 | *Step inside*, drag around the world | Let it breathe. Say nothing. |
+| 5 | A reminder opens on its own — invitation, her words, the place beneath | "When she comes back — or now and then — it comes back to her." |
+| 6 | Family page: *approved and sensitive* still "never offered" | "Her family decides what reaches her." |
 
-Shot 5 is the whole pitch. Don't narrate it.
+Shot 4 is the whole pitch. Don't narrate it.
