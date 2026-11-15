@@ -108,8 +108,7 @@ which memories still bring her joy, so families can stop offering the ones that 
 
 ## Links
 
-- **Try it live:** https://grannys-here.vercel.app
-- **Band companion:** https://grannys-band.vercel.app (Chrome or Edge, needs the band)
+- **Try it live:** https://grannys-here.vercel.app — one site: band companion at the root, **Step inside** builds a 3D place from kept words, memory viewer and family page under /web/
 - **Repository:** https://github.com/hwnprc/grannys-here
 - **3D world:** https://marble.worldlabs.ai/world/4a37eb1b-10f9-427b-ab38-32103e48ce89
 - **Demo video:** **[confirm]** add the link once uploaded

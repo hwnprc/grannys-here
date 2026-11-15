@@ -1,3 +1,5 @@
 @import url('/base.css');
 
 .notification-controls{margin:18px 0 28px}.notification-controls p{max-width:650px}#quick-status{padding:12px;border-left:3px solid var(--green,#315d49);background:#eef2e9}
+
+.world-panel{margin-bottom:48px}.world-stage{width:100%;aspect-ratio:16/9;max-height:70vh;background:#1c1a16;border-radius:9px;overflow:hidden;margin:16px 0 10px;touch-action:none}.world-stage canvas{display:block;width:100%!important;height:100%!important}.world-error{color:#853d23}

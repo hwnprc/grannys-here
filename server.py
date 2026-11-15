@@ -33,6 +33,7 @@ REALISM = ("Photorealistic, like a real photograph of this real place, natural l
 
 _jobs = {}
 _lock = threading.Lock()
+WORLDS = ROOT / "worlds"          # generated splats, served locally and git-ignored
 
 
 def key():
@@ -58,6 +59,33 @@ def start_world(prompt, model):
     return r.json()["operation_id"]
 
 
+def pick_spz(urls):
+    """Smallest usable splat: the browser has to download it before anything shows."""
+    for size in ("500k", "100k", "full_res"):
+        if urls.get(size):
+            return urls[size]
+    return next(iter(urls.values()), None)
+
+
+def fetch_splat(url, operation_id):
+    """Pull the splat onto this machine so the page loads it same-origin.
+
+    Marble's CDN is another origin; fetching it from the page would depend on
+    its CORS headers. Downloading it here removes that question entirely.
+    """
+    WORLDS.mkdir(exist_ok=True)
+    dest = WORLDS / ("%s.spz" % operation_id)
+    if dest.exists():
+        return "/worlds/%s.spz" % operation_id
+    try:
+        r = requests.get(url, timeout=300)
+        r.raise_for_status()
+    except requests.RequestException:
+        return None
+    dest.write_bytes(r.content)
+    return "/worlds/%s.spz" % operation_id
+
+
 def poll_world(operation_id):
     r = requests.get("%s/operations/%s" % (API, operation_id),
                      headers={"WLT-Api-Key": key()}, timeout=30)
@@ -71,10 +99,12 @@ def poll_world(operation_id):
         return {"done": False, "status": meta.get("status", "IN_PROGRESS")}
     world = op.get("response") or {}
     assets = world.get("assets") or {}
+    spz = pick_spz((assets.get("splats") or {}).get("spz_urls") or {})
     return {
         "done": True,
         "world_url": world.get("world_marble_url"),
         "pano_url": (assets.get("imagery") or {}).get("pano_url"),
+        "splat_url": fetch_splat(spz, operation_id) if spz else None,
         "thumbnail_url": assets.get("thumbnail_url"),
         "caption": assets.get("caption"),
     }

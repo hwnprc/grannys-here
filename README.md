@@ -7,10 +7,12 @@ built on the Vexo Open band.
 
 Built at **VexoHacks** (AI Wearables Hackathon, Y Combinator SF) — November 14, 2026.
 
-**Live:** <https://grannys-here.vercel.app> — the memory, its 3D world and the family
-approval page. The band companion is at <https://grannys-band.vercel.app>; it needs
-Chrome or Edge and the band in hand, since Web Bluetooth talks to the hardware
-directly. The Python demo loop stays local for the same reason.
+**Live:** <https://grannys-here.vercel.app> — one site. The band companion is the front
+door (capture a conversation on Vexo-HACK-25, keep it, get a reminder when you return);
+its **Step inside** section builds a walkable 3D place from the words you kept, rendered
+on the page itself. The memory viewer, the family approval page and the Stow Lake world
+live under `/web/`. Connecting the band needs Chrome or Edge and the band in hand. The
+Python demo loop stays local because it drives the band over Bluetooth.
 
 ---
 
