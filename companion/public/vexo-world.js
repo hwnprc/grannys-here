@@ -261,89 +261,55 @@ function decorateReminder() {
 }
 if (dialog) new MutationObserver(decorateReminder).observe(dialog, { attributes: true, attributeFilter: ['open'] });
 
-// ---------- "Keep another story": a second memory, through his own form ----------
-// Drives the Paste-text path exactly as a person would (source "Manually entered"),
-// so validation, duplicate checks and the place confirmation all still apply.
-// Then the auto-build above notices the new card and builds this place for real.
-const SECOND_STORY = {
-  text: "My mother's kitchen was the back room on Alabama Street, the one with the long counter under the window. " +
-        "Every December she'd have all of us in there making tamales — the corn husks soaking in the sink, the pot " +
-        "going on the stove, flour on everything. I was seven the first Christmas she let me spread the masa myself. " +
-        "The light came in low over the counter in the afternoon and the whole room smelled of chiles and steam.",
-  place: 'The kitchen on Alabama Street', person: 'your mother', lat: '37.7512', lon: '-122.4119',
-  excerpt: "I was seven the first Christmas she let me spread the masa myself.",
-  reminder: 'You learned to make tamales at this counter, the Christmas you were seven. Shall we remember it?',
-};
-const keepAnother = $('world-keep-another');
-keepAnother?.addEventListener('click', async () => {
+// ---------- "Add the demo memories": three stories, through his own forms ----------
+// Drives his Try-a-demo and Paste-text paths exactly as a person would, so his
+// validation, duplicate check and place confirmation all still apply. Stories
+// already in the box are skipped. The park's place is instant (already built);
+// the others are built for real by the auto-build above.
+const DEMO_STORIES = [
+  { kind: 'demo', place: 'Stow Lake, Golden Gate Park' },           // his demo button: Granny's park story
+  { kind: 'manual', place: 'The kitchen on Alabama Street', person: 'your mother', lat: '37.7512', lon: '-122.4119',
+    text: "My mother's kitchen was the back room on Alabama Street, the one with the long counter under the window. " +
+          "Every December she'd have all of us in there making tamales — the corn husks soaking in the sink, the pot " +
+          "going on the stove, flour on everything. I was seven the first Christmas she let me spread the masa myself. " +
+          "The light came in low over the counter in the afternoon and the whole room smelled of chiles and steam.",
+    excerpt: "I was seven the first Christmas she let me spread the masa myself.",
+    reminder: 'You learned to make tamales at this counter, the Christmas you were seven. Shall we remember it?' },
+  { kind: 'manual', place: 'The church on Dolores Street', person: 'your grandfather', lat: '37.7598', lon: '-122.4253',
+    text: "Your grandfather sang in the choir at the church on Dolores Street, the one with the two white towers. " +
+          "We sat in the third pew on the left every Sunday because he said the sound came down best there. " +
+          "After the service he'd take me across to the park and buy me an orange from the man with the cart. " +
+          "In spring the jacaranda outside dropped purple all over the steps and he'd grumble about his shoes.",
+    excerpt: "We sat in the third pew on the left every Sunday because he said the sound came down best there.",
+    reminder: 'Your grandfather sang here, and you sat in the third pew on the left. Would you like to hear about it?' },
+];
+const pause = ms => new Promise(r => setTimeout(r, ms));
+async function keepStory(st) {
+  if (readMemories().some(m => m.place?.name === st.place)) return 'already';
+  if (st.kind === 'demo') { $('tab-demo').click(); $('load-demo').click(); }
+  else {
+    $('tab-manual').click(); $('manual-text').value = st.text; $('use-manual').click(); await pause(300);
+    $('person').value = st.person; $('place-name').value = st.place;
+    $('excerpt').value = st.excerpt; $('reminder').value = st.reminder;
+    $('latitude').value = st.lat; $('longitude').value = st.lon;
+    $('latitude').dispatchEvent(new Event('input'));       // his handler: manual coords, no anchor
+  }
+  await pause(300);
+  $('place-confirm').checked = true;
+  document.querySelector('#memory-form button[type=submit]').click();
+  await pause(700);
+  return readMemories().some(m => m.place?.name === st.place) ? 'kept' : 'failed';
+}
+const seedBtn = $('world-keep-another');
+seedBtn?.addEventListener('click', async () => {
   try {
-    keepAnother.disabled = true;
-    $('tab-manual').click();
-    $('manual-text').value = SECOND_STORY.text;
-    $('use-manual').click();
-    await new Promise(r => setTimeout(r, 300));
-    $('person').value = SECOND_STORY.person; $('place-name').value = SECOND_STORY.place;
-    $('excerpt').value = SECOND_STORY.excerpt; $('reminder').value = SECOND_STORY.reminder;
-    $('latitude').value = SECOND_STORY.lat; $('longitude').value = SECOND_STORY.lon;
-    $('latitude').dispatchEvent(new Event('input'));          // his handler: manual coords, no anchor
-    $('place-confirm').checked = true;
-    document.querySelector('#memory-form button[type=submit]').click();
-    await new Promise(r => setTimeout(r, 600));
-    if (readMemories().some(m => m.place?.name === SECOND_STORY.place)) {
-      say('A second memory was kept. Its place is being built now — watch its card.');
-    } else {
-      say(document.querySelector('.notice')?.textContent || 'It was not kept — see the message above the form.', true);
-    }
+    seedBtn.disabled = true;
+    const out = [];
+    for (const st of DEMO_STORIES) out.push(`${st.place.split(',')[0]}: ${await keepStory(st)}`);
+    const kept = out.filter(o => o.endsWith('kept')).length;
+    say(kept ? `${kept} new memor${kept === 1 ? 'y' : 'ies'} kept — ${out.join(' · ')}. The park's place is ready now; the others are being built.`
+             : `All three are already in the box — ${out.join(' · ')}.`, !kept && out.some(o => o.endsWith('failed')));
+    $('memories').scrollIntoView({ behavior: 'smooth' });
   } catch (e) { say(e.message, true); }
-  finally { keepAnother.disabled = false; }
+  finally { seedBtn.disabled = false; }
 });
-
-// ---------- reminders now and then ----------
-// A return is one trigger. Time is another: every so often, offer one kept memory —
-// preferring places that are already built — through his own reminder queue, so it
-// arrives as the same dialog (with the place beneath the words) and the same OS
-// notification he already raises. Phones show that notification as a system banner
-// while this page is open; a push that wakes a locked phone needs a service worker
-// and a push server, which this does not have yet.
-const TIMED_KEY = 'before-i-forget.worlds.timed';      // minutes, "0" = off
-const timedSel = $('world-timed');
-let timedHandle = null, lastTimedId = null, timedPendingId = null;
-
-function pickForReminder() {
-  const ms = readMemories(); if (!ms.length) return null;
-  const worlds = readWorlds();
-  const built = ms.filter(m => worlds[m.id]?.splat_url);
-  const pool = (built.length ? built : ms).filter(m => m.id !== lastTimedId);
-  const list = pool.length ? pool : (built.length ? built : ms);
-  return list[Math.floor(Math.random() * list.length)];
-}
-function fireTimedReminder() {
-  const m = pickForReminder(); if (!m) return;
-  if (!window.beforeIForget?.enqueueReminder) return;
-  if (document.getElementById('return-dialog')?.open) return;   // never stack on an open one
-  lastTimedId = m.id; timedPendingId = m.id;
-  window.beforeIForget.enqueueReminder(m, true);                  // true: never touches real GPS state
-}
-function applyTimed() {
-  clearInterval(timedHandle); timedHandle = null;
-  const mins = Number(timedSel.value || 0);
-  try { localStorage.setItem(TIMED_KEY, String(mins)); } catch {}
-  if (mins > 0) timedHandle = setInterval(fireTimedReminder, mins * 60 * 1000);
-  $('world-timed-status').textContent = mins > 0
-    ? `A memory will be offered about every ${mins} minute${mins === 1 ? '' : 's'} while this page is open.`
-    : 'Off. Memories are offered only when you return to their place.';
-}
-if (timedSel) {
-  timedSel.value = localStorage.getItem(TIMED_KEY) || '0';
-  if (![...timedSel.options].some(o => o.value === timedSel.value)) timedSel.value = '0';
-  timedSel.addEventListener('change', applyTimed);
-  $('world-timed-now')?.addEventListener('click', fireTimedReminder);
-  applyTimed();
-}
-// label a timed reminder honestly: it is neither a return nor a location simulation
-if (dialog) new MutationObserver(() => {
-  if (!dialog.open || !timedPendingId) return;
-  const m = reminderMemory();
-  if (m && m.id === timedPendingId) $('return-mode').textContent = 'A MEMORY, NOW AND THEN';
-  timedPendingId = null;
-}).observe(dialog, { attributes: true, attributeFilter: ['open'] });

@@ -1,17 +1,17 @@
 @import url('/base.css');
 
-.notification-controls{margin:18px 0 28px}.notification-controls p{max-width:650px}#quick-status{padding:12px;border-left:3px solid var(--green,#315d49);background:#eef2e9}
+.notification-controls{margin:18px 0 28px}.notification-controls p{max-width:650px}#quick-status{padding:12px;border-left:3px solid var(--green,#19606a);background:#e3ecea}
 
-.world-panel{margin-bottom:48px}.world-stage{width:100%;aspect-ratio:16/9;max-height:70vh;background:#1c1a16;border-radius:9px;overflow:hidden;margin:16px 0 10px;touch-action:none}.world-stage canvas{display:block;width:100%!important;height:100%!important}.world-error{color:#853d23}
+.world-panel{margin-bottom:48px}.world-stage{width:100%;aspect-ratio:16/9;max-height:70vh;background:#1d2430;border-radius:3px;overflow:hidden;margin:16px 0 10px;touch-action:none}.world-stage canvas{display:block;width:100%!important;height:100%!important}.world-error{color:#8a3b2a}
 .place-line{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px dashed var(--line);padding-top:9px;margin:10px 0 0!important}.place-line button{padding:0;min-height:30px}
 
 /* the place inside a return reminder */
 .return-world{margin:18px 0 8px;border-top:1px solid var(--line);padding-top:16px}
-.return-world img{display:block;width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:10px}
+.return-world img{display:block;width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:3px;border:1px solid var(--line);margin-bottom:10px}
 .return-world .small{margin:0 0 10px}
 /* section 03: a quieter rhythm, like the rest of the page */
 .world-panel .small{max-width:62ch}
-.world-stage{box-shadow:0 18px 40px -24px #2a2e28}
-#world-caption{font:italic 13px/1.7 var(--serif);color:var(--muted);max-width:70ch}
+.world-stage{box-shadow:0 18px 40px -24px #1d2430}
+#world-caption{font:italic 13px/1.7 var(--sans);color:var(--muted);max-width:70ch}
 #world-marble{margin-top:4px}
 .timed-row{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}.timed-row label{margin-top:0}.timed-row select{max-width:420px}

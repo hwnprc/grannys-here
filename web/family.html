@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Her memories — Granny's Here</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root{
-    --paper:#f6f4ed; --surface:#fffefa; --ink:#292f28; --muted:#707569; --line:#dddcd1;
-    --green:#3b5747; --clay:#a24f35; --light:#e9eee7;
-    --serif:Georgia,"Times New Roman",serif; --sans:Arial,Helvetica,sans-serif;
+    --paper:#f1f2ee; --surface:#fbfbf9; --ink:#1d2430; --muted:#5e6773; --line:#d3d7d0;
+    --green:#19606a; --clay:#8a5a12; --light:#e3ecea;
+    --serif:'Bricolage Grotesque',system-ui,-apple-system,sans-serif; --sans:'Atkinson Hyperlegible',system-ui,-apple-system,sans-serif;
   }
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:var(--paper);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
@@ -16,27 +17,27 @@
   .top a{color:var(--ink);text-decoration:none}.top a:hover{text-decoration:underline}.brand{font:20px var(--serif)}.brand span{color:var(--clay)}
   .wrap{max-width:960px;margin:0 auto;padding:30px 42px 70px}
   header{margin-bottom:28px;border-bottom:1px solid var(--line);padding-bottom:22px}
-  .eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 10px}
-  h1{font:300 38px/1.15 var(--serif);letter-spacing:-1px;margin:0 0 12px}
+  .eyebrow{font:500 10px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  h1{font:500 38px/1.1 var(--serif);letter-spacing:-1px;margin:0 0 12px}
   .lede{font-size:14px;color:var(--muted);margin:0;max-width:62ch;line-height:1.8}
   ol{list-style:none;margin:0;padding:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-  .memory{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:22px;display:flex;flex-direction:column}
+  .memory{background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:22px;display:flex;flex-direction:column}
   .memory h2{font:24px/1.25 var(--serif);font-weight:400;margin:0 0 4px}
   .memory h2 a{color:var(--ink);text-decoration:none}.memory h2 a:hover{text-decoration:underline;text-underline-offset:3px}
   .place{color:var(--muted);font-size:12px;margin:0 0 12px}
   .summary{font:15px/1.6 var(--serif);margin:0 0 14px;flex:1}
   .badges{display:flex;flex-wrap:wrap;gap:6px}
-  .badge{font-size:10px;letter-spacing:.3px;border-radius:20px;padding:4px 9px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .badge{font-size:10px;letter-spacing:.3px;border-radius:3px;padding:4px 9px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-  .badge.approved{color:var(--green);background:var(--light);border-color:#c9d4c2}
+  .badge.approved{color:var(--green);background:var(--light);border-color:#b9cfc9}
   .badge.waiting{color:var(--muted)}
-  .badge.sensitive{color:var(--clay);background:#f8ebe3;border-color:#e2b9a7}
+  .badge.sensitive{color:var(--clay);background:#f6e8e3;border-color:#dcb3a6}
   .surfacing{margin:14px 0 0;padding-top:12px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted);display:flex;align-items:baseline;gap:8px}
   .surfacing b{color:var(--ink);font-weight:600}
   .dot{width:8px;height:8px;border-radius:50%;flex:none;transform:translateY(-1px)}
   .dot.on{background:var(--clay)}.dot.off{background:transparent;border:1.5px solid var(--muted)}
   .state{font:18px/1.5 var(--serif);color:var(--muted)}
-  code{font:12px ui-monospace,Menlo,monospace;color:var(--clay);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+  code{font:12px 'IBM Plex Mono',ui-monospace,Menlo,monospace;color:var(--clay);background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:2px 6px}
   footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}footer p{margin:0 0 6px}
   [hidden]{display:none!important}
   @media(max-width:600px){.wrap,.top{padding-left:20px;padding-right:20px}}
