@@ -313,3 +313,45 @@ seedBtn?.addEventListener('click', async () => {
   } catch (e) { say(e.message, true); }
   finally { seedBtn.disabled = false; }
 });
+
+// ---------- the way in ----------
+$('begin-band')?.addEventListener('click', () => { $('tab-band').click(); document.querySelector('.source-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('begin-type')?.addEventListener('click', () => { $('tab-manual').click(); document.querySelector('.source-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('manual-text')?.focus(), 400); });
+$('begin-demo')?.addEventListener('click', async () => {
+  const btn = $('begin-demo'); btn.disabled = true;
+  try {
+    const park = DEMO_STORIES[0];
+    const r = await keepStory(park);
+    const m = readMemories().find(x => x.place?.name === park.place);
+    if (!m) { say('Could not keep the story — see the message above the form.', true); return; }
+    sel.value = m.id; sel.dispatchEvent(new Event('change'));
+    const w = readWorlds()[m.id];
+    if (w?.splat_url) await show(w.splat_url, w);
+    $('world').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    say(r === 'kept' ? 'Her story is kept, and this is the place she described. Drag to look around.' : 'This is the place she described. Drag to look around.');
+  } catch (e) { say(e.message, true); }
+  finally { btn.disabled = false; }
+});
+
+// one button: "Step inside" when the place exists, "Build this place" when it does not
+function refreshBuildLabel() {
+  const m = memories.find(x => x.id === sel.value);
+  const built = m && readWorlds()[m.id]?.splat_url;
+  build.textContent = built ? 'Step inside ↗' : 'Build this place ↗';
+  build.dataset.mode = built ? 'open' : 'build';
+  $('world-words').open = !m;                                   // typing a place: words visible; kept memory: folded
+}
+sel.addEventListener('change', refreshBuildLabel);
+new MutationObserver(refreshBuildLabel).observe($('memory-list'), { childList: true });
+refreshBuildLabel();
+build.addEventListener('click', e => {
+  if (build.dataset.mode !== 'open') return;                    // the build handler above runs otherwise
+  e.stopImmediatePropagation();
+  const m = memories.find(x => x.id === sel.value); const w = m && readWorlds()[m.id];
+  if (w?.splat_url) show(w.splat_url, w).catch(err => say(err.message, true));
+}, true);
+
+// if someone presses Keep with no location at all, open the by-hand fields instead of a silent refusal
+document.querySelector('#memory-form button[type=submit]')?.addEventListener('click', () => {
+  if (!$('latitude').value || !$('longitude').value) { const d = document.querySelector('.coords'); if (d) d.open = true; }
+});
