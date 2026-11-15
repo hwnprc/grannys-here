@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Granny's Here — tell me about the place</title>
+<style>
+  :root{
+    --bg:#140f0b; --ink:#f6ece1; --dim:#c6b4a3; --faint:#8d7a69;
+    --amber:#f0a850; --soft:rgba(240,168,80,.14); --line:rgba(246,236,225,.14);
+    --serif:Georgia,"Iowan Old Style",Palatino,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+       font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+  #world-layer{position:fixed;inset:0;z-index:0;
+    background:radial-gradient(1100px 650px at 72% 28%,#3a2a1c 0,transparent 70%),
+               radial-gradient(900px 600px at 18% 82%,#2a1f18 0,transparent 70%),var(--bg)}
+  #pano{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 2.6s ease;display:block}
+  #pano.on{opacity:1}
+  #scrim{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(to right,rgba(20,15,11,.95) 0,rgba(20,15,11,.8) 44%,rgba(20,15,11,.35) 100%),
+               linear-gradient(to top,rgba(20,15,11,.8) 0,transparent 55%)}
+
+  main{position:relative;z-index:2;min-height:100%;display:flex;align-items:center;padding:6vh 7vw}
+  .panel{max-width:36rem;width:100%}
+
+  .eyebrow{font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);
+           margin:0 0 1rem;display:flex;align-items:center;gap:.6rem}
+  .eyebrow::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 14px 3px rgba(240,168,80,.55);flex:none}
+  .eyebrow.listening::before{animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+
+  h1{font-family:var(--serif);font-size:clamp(1.9rem,4vw,2.9rem);line-height:1.15;
+     font-weight:400;margin:0 0 1.2rem}
+
+  textarea{width:100%;min-height:8.5rem;resize:vertical;background:rgba(0,0,0,.34);
+    color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;
+    font-family:var(--serif);font-size:1.08rem;line-height:1.6}
+  textarea:focus{outline:none;border-color:rgba(240,168,80,.5)}
+  textarea::placeholder{color:var(--faint)}
+  .interim{color:var(--faint);font-family:var(--serif);font-style:italic;min-height:1.4rem;margin:.5rem 0 0}
+
+  .row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.3rem;align-items:center}
+  button{font-family:inherit;font-size:1rem;border:0;border-radius:999px;padding:.85rem 1.6rem;
+    cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+  button:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+  .primary{background:var(--amber);color:var(--bg);box-shadow:0 6px 26px rgba(240,168,80,.22)}
+  .primary:hover:not(:disabled){transform:translateY(-2px)}
+  .ghost{background:transparent;color:var(--amber);border:1px solid rgba(240,168,80,.45)}
+  .ghost:hover:not(:disabled){background:var(--soft)}
+  button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+  .mic.on{background:#e46a5c;color:#fff;box-shadow:0 0 0 0 rgba(228,106,92,.6);animation:ring 1.6s infinite}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(228,106,92,.5)}70%{box-shadow:0 0 0 16px rgba(228,106,92,0)}100%{box-shadow:0 0 0 0 rgba(228,106,92,0)}}
+
+  .note{margin-top:1.4rem;font-size:.9rem;color:var(--faint)}
+  .note code{font-family:ui-monospace,Menlo,monospace;font-size:.85rem;color:var(--amber)}
+  .err{color:#f0a0a0}
+
+  .steps{margin:1.5rem 0 0;padding:0;list-style:none;font-size:.95rem;color:var(--faint)}
+  .steps li{padding:.3rem 0 .3rem 1.6rem;position:relative}
+  .steps li::before{content:"○";position:absolute;left:0}
+  .steps li.done::before{content:"✓";color:var(--amber)}
+  .steps li.now::before{content:"◐";color:var(--amber)}
+  .steps li.now{color:var(--dim)}
+
+  a.walk{display:inline-block;font-size:1rem;color:var(--amber);background:transparent;
+    border:1px solid rgba(240,168,80,.45);border-radius:999px;padding:.85rem 1.6rem;text-decoration:none}
+  a.walk:hover{background:var(--soft)}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#pano{opacity:1}}
+  @media(max-width:700px){main{padding:7vh 6vw}
+    #scrim{background:linear-gradient(to top,rgba(20,15,11,.95),rgba(20,15,11,.7))}}
+</style>
+</head>
+<body>
+
+<div id="world-layer"><img id="pano" alt="" aria-hidden="true"></div>
+<div id="scrim"></div>
+
+<main>
+  <div class="panel">
+    <p class="eyebrow" id="eyebrow">Tell me about the place</p>
+    <h1 id="headline">Where does this memory live?</h1>
+
+    <textarea id="story" placeholder="Press “Start talking”, or type here. Describe the place the way you remember it — the light, the season, what was around you."></textarea>
+    <p class="interim" id="interim"></p>
+
+    <div class="row">
+      <button class="primary mic" id="mic" type="button">Start talking</button>
+      <button class="ghost" id="build" type="button">Build this place</button>
+      <label style="font-size:.9rem;color:var(--faint);display:flex;align-items:center;gap:.4rem">
+        <input type="checkbox" id="draft" checked> draft (faster)
+      </label>
+    </div>
+
+    <ul class="steps" id="steps" hidden>
+      <li id="s1">Heard what you said</li>
+      <li id="s2">Building the place</li>
+      <li id="s3">Ready to walk into</li>
+    </ul>
+
+    <div class="row" id="done-row" hidden>
+      <a class="walk" id="walk" href="#" target="_blank" rel="noopener">Walk through this place ↗</a>
+      <button class="ghost" id="again" type="button">Describe another place</button>
+    </div>
+
+    <p class="note" id="note"></p>
+  </div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id)};
+  var story=$("story"), mic=$("mic"), build=$("build"), note=$("note");
+  var steps=$("steps"), doneRow=$("done-row"), pano=$("pano");
+  var recog=null, listening=false, finalText="";
+
+  function say(msg,bad){ note.innerHTML=msg||""; note.className="note"+(bad?" err":""); }
+  function step(el,state){ $(el).className=state||""; }
+
+  // ---- speech: the browser does it, so no Deepgram key is needed ----
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    mic.disabled=true;
+    mic.textContent="Speech needs Chrome";
+    say("This browser has no speech recognition. Type the description instead — everything else works.");
+  }
+
+  mic.addEventListener("click",function(){
+    if(!SR) return;
+    if(listening){ recog.stop(); return; }
+    recog = new SR();
+    recog.lang="en-US"; recog.continuous=true; recog.interimResults=true;
+    finalText = story.value ? story.value.trim()+" " : "";
+
+    recog.onstart=function(){
+      listening=true; mic.classList.add("on"); mic.textContent="Stop talking";
+      $("eyebrow").classList.add("listening"); $("eyebrow").textContent="Listening";
+      say("Your voice is transcribed by the browser. Nothing is sent to us.");
+    };
+    recog.onresult=function(e){
+      var interim="";
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var t=e.results[i][0].transcript;
+        if(e.results[i].isFinal){ finalText += t+" "; } else { interim += t; }
+      }
+      story.value = finalText.replace(/\s+/g," ");
+      $("interim").textContent = interim;
+    };
+    recog.onerror=function(e){
+      say(e.error==="not-allowed"
+        ? "Microphone permission was refused. Allow it in the address bar, or type instead."
+        : "Speech stopped: "+e.error+". You can keep typing.", true);
+    };
+    recog.onend=function(){
+      listening=false; mic.classList.remove("on"); mic.textContent="Start talking";
+      $("eyebrow").classList.remove("listening"); $("eyebrow").textContent="Tell me about the place";
+      $("interim").textContent="";
+    };
+    try{ recog.start(); }catch(err){ say("Could not start the microphone: "+err.message,true); }
+  });
+
+  // ---- build the world ----
+  build.addEventListener("click",function(){
+    var prompt=(story.value||"").trim();
+    if(prompt.length<10){ say("Say or type a little more about the place first.",true); return; }
+    if(listening) recog.stop();
+
+    build.disabled=true; mic.disabled=true; doneRow.hidden=true;
+    steps.hidden=false; step("s1","done"); step("s2","now"); step("s3","");
+    $("headline").textContent="Building the place you described";
+    say("This takes a few minutes. The description is sent to World Labs to generate the world.");
+
+    fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt:prompt,draft:$("draft").checked})})
+      .then(function(r){return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||("HTTP "+r.status)); return j; })})
+      .then(function(j){ watch(j.operation_id, Date.now()); })
+      .catch(fail);
+  });
+
+  function watch(op, started){
+    fetch("/api/status/"+encodeURIComponent(op))
+      .then(function(r){return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||("HTTP "+r.status)); return j; })})
+      .then(function(j){
+        if(!j.done){
+          var secs=Math.round((Date.now()-started)/1000);
+          say("Still building — "+secs+"s so far. Worlds usually take a few minutes.");
+          return setTimeout(function(){ watch(op,started); },5000);
+        }
+        step("s2","done"); step("s3","done");
+        $("headline").textContent="Step inside it";
+        if(j.pano_url){ pano.onload=function(){pano.classList.add("on")}; pano.src=j.pano_url; }
+        if(j.world_url){ $("walk").href=j.world_url; }
+        doneRow.hidden=false; build.disabled=false; mic.disabled=!SR;
+        say(j.caption ? "The model saw: "+j.caption.slice(0,180) : "");
+      })
+      .catch(fail);
+  }
+
+  function fail(e){
+    step("s2",""); build.disabled=false; mic.disabled=!SR;
+    $("headline").textContent="That didn't work";
+    say("Could not build the place: "+e.message, true);
+  }
+
+  $("again").addEventListener("click",function(){
+    story.value=""; finalText=""; pano.classList.remove("on");
+    steps.hidden=true; doneRow.hidden=true; say("");
+    $("headline").textContent="Where does this memory live?";
+    story.focus();
+  });
+})();
+</script>
+</body>
+</html>
