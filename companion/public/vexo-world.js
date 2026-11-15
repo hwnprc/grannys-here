@@ -355,3 +355,46 @@ build.addEventListener('click', e => {
 document.querySelector('#memory-form button[type=submit]')?.addEventListener('click', () => {
   if (!$('latitude').value || !$('longitude').value) { const d = document.querySelector('.coords'); if (d) d.open = true; }
 });
+
+// ---------- the reminder is one tap away, everywhere ----------
+const fab = $('remind-fab');
+function fmtLeft(ms) { const s = Math.max(0, Math.round(ms / 1000)); const m = Math.floor(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : m > 0 ? `${m}m ${String(s % 60).padStart(2, '0')}s` : `${s}s`; }
+function updateFab() {
+  if (!fab) return;
+  fab.hidden = readMemories().length === 0;                  // nothing to be reminded of yet
+  const cd = $('remind-countdown');
+  const mins = Number(timedSel?.value || 0);
+  cd.textContent = mins > 0 && nextTimedAt ? `next in ${fmtLeft(nextTimedAt - Date.now())}` : 'only on return';
+}
+setInterval(updateFab, 1000);
+new MutationObserver(updateFab).observe($('memory-list'), { childList: true });
+$('remind-now')?.addEventListener('click', () => {
+  if (!readMemories().length) { say('Keep a memory first — then there is something to be reminded of.', true); $('capture').scrollIntoView({ behavior: 'smooth' }); return; }
+  fireTimedReminder();
+});
+$('remind-timing')?.addEventListener('click', () => {
+  $('world-options').open = true;
+  $('world').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => timedSel?.focus(), 500);
+});
+updateFab();
+
+// ---------- a first reminder, by itself, shortly after arriving ----------
+// Once per visit, about half a minute in: if something is kept and no one is
+// typing or recording, one memory comes up on its own — so the reminder is seen,
+// not hunted for. Never while the form or a recording has their attention.
+const FIRST_KEY = 'before-i-forget.worlds.firstShown';
+function busy() {
+  const a = document.activeElement; const tag = a?.tagName;
+  const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  const recording = /recording|listening|starting|stopping/i.test($('recording-status')?.textContent || '');
+  return typing || recording || document.getElementById('return-dialog')?.open || document.getElementById('edit-dialog')?.open;
+}
+function firstReminder(attempt = 0) {
+  if (sessionStorage.getItem(FIRST_KEY)) return;
+  if (!readMemories().length) { if (attempt < 20) setTimeout(() => firstReminder(attempt + 1), 15000); return; }
+  if (busy() || document.hidden) { if (attempt < 20) setTimeout(() => firstReminder(attempt + 1), 15000); return; }
+  try { sessionStorage.setItem(FIRST_KEY, '1'); } catch {}
+  fireTimedReminder();
+}
+setTimeout(() => firstReminder(), 30000);

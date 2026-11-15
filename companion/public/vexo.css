@@ -19,3 +19,11 @@
 #world-words{margin:4px 0 0}#world-words summary{font-size:14px;color:var(--muted);margin-bottom:6px}#world-words textarea{margin-top:8px}
 .world-actions{margin-top:16px}#world-options{margin-top:22px;border-top:1px solid var(--line);padding-top:12px}#world-options summary{font-size:15px}
 #world-options .timed-row{border-top:0;padding-top:4px}
+
+/* reminders, always within reach */
+.remind-fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.remind-fab .primary{box-shadow:0 10px 30px -10px #1d2430aa,inset 0 -2px 0 rgba(0,0,0,.18);font-size:16px;padding:14px 20px}
+.remind-fab .primary span{color:#ffd27a}
+.remind-timing{background:var(--surface);border:1px solid var(--line);color:var(--muted);font:500 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.04em;padding:8px 10px;min-height:0;border-radius:3px}
+.remind-timing:hover{border-color:var(--ink);color:var(--ink)}
+@media(max-width:600px){.remind-fab .primary{padding:13px 16px;font-size:15px}}
