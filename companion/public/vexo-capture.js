@@ -3,6 +3,26 @@ import {deepgramLink} from '../vexo-open-kit/dashboard/speech/deepgram.js';
 import {BAND_NUMBER} from './config.js';
 import {conversation} from './vexo-data.js';
 
+// Authenticate the actual speech connection without enabling the band microphone.
+export async function checkSpeechConnection({key,createSpeech=deepgramLink,timeoutMs=10000}={}) {
+  if(!key?.trim())throw new Error('Enter your Deepgram key first.');
+  const speech=createSpeech({key:key.trim()});
+  await new Promise((resolve,reject)=>{
+    let settled=false;
+    const finish=error=>{
+      if(settled)return;settled=true;clearTimeout(timer);
+      try{speech.stop();}catch{}
+      if(error)reject(new Error(error));else resolve();
+    };
+    const timer=setTimeout(()=>finish('Deepgram did not respond. Check your connection and try again.'),timeoutMs);
+    try{speech.start({
+      onState:state=>{if(state==='listening')finish();else if(state==='off')finish('Deepgram closed before connecting. Check the key and try again.');},
+      onError:()=>finish('Deepgram rejected the connection. Check the key, project credit and internet connection.'),
+      onText:()=>{}
+    });}catch{finish('Deepgram could not connect. Check the key and try again.');}
+  });
+}
+
 export class VexoCapture {
   constructor({connectBand=(number,options)=>Band.connect(number,options),createSpeech=deepgramLink,onChange=()=>{},onComplete=()=>{}}={}) {
     this.connectBand=connectBand;this.createSpeech=createSpeech;this.onChange=onChange;this.onComplete=onComplete;
@@ -42,8 +62,9 @@ export class VexoCapture {
     if(this.state.recording!=='off')throw new Error('A recording is already active.');
     if(!key?.trim())throw new Error('Enter your team’s Deepgram key in the private field. You can use manual text without a key.');
   }
-  async start({key,consent}) {
+  async start({key,consent,maxDurationMs=120000}) {
     this.validateStart({key,consent});
+    if(!Number.isFinite(maxDurationMs)||maxDurationMs<=0||maxDurationMs>120000)throw new Error('Recording duration must be between 1 and 120000 milliseconds.');
     this.session={id:crypto.randomUUID(),startedAt:Date.now(),audioPackets:0,segments:[]};
     this.emit({recording:'starting',audioPackets:0,lastPacketAt:null,lastTranscriptAt:null,text:'',interim:'',message:'Opening transcription. The microphone is still off.'});
     const speech=this.createSpeech({key:key.trim()});this.speech=speech;
@@ -72,7 +93,7 @@ export class VexoCapture {
       if(!this.band||this.speech!==speech)throw new Error('Band disconnected before recording began.');
       this.emit({recording:'listening',message:'Recording — audio is being sent to Deepgram. The band light is blue.'});
       await this.band.configure({audio:true});
-      this.limitTimer=setTimeout(()=>{void this.stop().catch(()=>{});},120000);
+      this.limitTimer=setTimeout(()=>{void this.stop().catch(()=>{});},maxDurationMs);
     } catch(e) {await this.stop();throw e;}
   }
   async stop() {
@@ -88,7 +109,8 @@ export class VexoCapture {
     }
     const speech=this.speech;
     if(speech)await new Promise(resolve=>{let done=false;const end=()=>{if(done)return;done=true;clearTimeout(timeout);resolve();};const timeout=setTimeout(end,1800);this.stopSpeechResolve=end;speech.stop();});
-    this.stopSpeechResolve=null;this.speech=null;this.emit({recording:'off',interim:''});
+    this.stopSpeechResolve=null;this.speech=null;
+    this.emit({recording:'off',interim:'',message:this.state.message.startsWith('Recording —')?'Recording finished. Microphone off.':this.state.message});
     if(this.session&&!this.session.completed){
       this.session.completed=true;let result=null;
       try{result=this.getConversation();}catch{} // Empty/failed sessions never become saved conversations.

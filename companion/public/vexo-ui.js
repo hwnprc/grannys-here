@@ -1,12 +1,13 @@
 import {BAND_NUMBER,STORAGE_KEY,DEFAULTS} from './config.js';
 import {SOURCES,conversation,createMemory,readStore,newReturnState,resumeReturnState,advanceReturn,snoozeReturn,sampleProblem} from './vexo-data.js';
-import {VexoCapture} from './vexo-capture.js';
+import {VexoCapture,checkSpeechConnection} from './vexo-capture.js';
 import {createLocatedMemory,reminderExcerpt,sendReturnNotification} from './vexo-remember.js';
 const $=id=>document.getElementById(id);
 const fmt=t=>t===null||t===undefined?'Unknown':new Date(t).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});
 let store={version:3,memories:[]},storageReady=true,selected=null,anchor=null,watchId=null,watchRunning=false,key='',activeReminder=null,editingId=null;
 const demoStates=new Map();const reminders=[];let demoTimers=new Set();
 let liveContext=null,quickBusy=false,saving=false,startRequest=0;
+let keyChecking=false,keyVerified=false,keyCheckRequest=0,voiceTest=false;
 function notice(message,error=false){$('notice').textContent=message;$('notice').className=`notice${error?' error':''}`;$('notice').hidden=false;}
 const action=fn=>async event=>{try{await fn(event);}catch(e){notice(e.message||'Something went wrong. Please try again.',true);}};
 try{store=readStore(localStorage.getItem(STORAGE_KEY));}catch(e){storageReady=false;notice(e.message,true);}
@@ -22,20 +23,43 @@ $('load-demo').addEventListener('click',action(()=>{useConversation(conversation
 const capture=new VexoCapture({onComplete:completeRecording,onChange:s=>{
   $('band-badge').textContent=s.connection==='connected'?'Band connected':s.connection==='connecting'?'Connecting…':'Not connected';$('band-badge').className=`badge ${s.connection==='connected'?'connected':''}`;
   $('connect').hidden=s.connection==='connected';$('connect').disabled=s.connection==='connecting';$('connect-usb').hidden=s.connection==='connected';$('connect-usb').disabled=s.connection==='connecting';$('disconnect').hidden=s.connection!=='connected';
-  $('identify').disabled=s.connection!=='connected'||s.recording!=='off';$('start').disabled=s.connection!=='connected'||s.recording!=='off'||quickBusy||saving;$('stop').disabled=!quickBusy&&!['listening','starting'].includes(s.recording);
+  $('identify').disabled=s.connection!=='connected'||s.recording!=='off';
+  const busy=s.recording!=='off'||quickBusy||saving;
+  const ready=s.connection==='connected'&&keyVerified&&$('consent').checked&&!keyChecking;
+  $('start').disabled=!ready||busy;$('test-voice').disabled=!ready||busy;$('stop').disabled=!quickBusy&&!['listening','starting'].includes(s.recording);
+  $('set-key').disabled=busy||keyChecking;$('check-key').disabled=busy||keyChecking||!key;
+  $('recording-readiness').textContent=busy?'Recording in progress. Use Stop at any time.':s.connection!=='connected'?'1. Connect band 25.':keyChecking?'Checking Deepgram. The microphone stays off.':!keyVerified?'2. Add your Deepgram key and check the connection.':!$('consent').checked?'3. Confirm recording consent below, then choose Test my voice.':'Ready. Test my voice checks audio for 15 seconds without needing location.';
+  $('stop').textContent=voiceTest?'Stop test':$('auto-save').checked?'Stop & save':'Stop';
   $('transport').textContent=s.connection==='connected'?(s.transport==='serial'?'Connected over USB':'Connected over Bluetooth'):'Connect over Bluetooth or USB';
   $('auto-save').disabled=s.recording!=='off'||quickBusy||saving;$('quick-place').disabled=$('auto-save').disabled;
   $('device-status').textContent=s.message;$('battery').textContent=s.battery===null?'Battery not received':`Battery ${s.battery}%`;
   $('live-transcript').textContent=s.text||'Your words will appear here.';$('interim').textContent=s.interim;
-  $('recording-status').textContent=s.recording==='listening'?'RECORDING — Audio is being sent to Deepgram. Stop at any time.':s.recording==='starting'?'Connecting to Deepgram. Microphone off.':s.recording==='stopping'?'Stopping microphone and collecting final words…':'Microphone off. Up to 2 minutes per recording. Audio is not saved.';
+  $('recording-status').textContent=s.recording==='listening'?(voiceTest?'VOICE TEST — Speak near band 25 now. Audio goes to Deepgram. Stops automatically after 15 seconds.':'RECORDING — Audio is being sent to Deepgram. Stop at any time.'):s.recording==='starting'?'Connecting to Deepgram. Microphone off.':s.recording==='stopping'?'Stopping microphone and collecting final words…':'Microphone off. Up to 2 minutes per recording. Audio is not saved.';
   $('recording-status').className=`small ${s.recording==='listening'?'recording':''}`;
   $('use-capture').disabled=s.recording!=='off'||!s.text||!s.audioPackets;
   $('receipt').textContent=`Audio received: ${s.audioPackets} packets${s.lastPacketAt?` · Last packet: ${fmt(s.lastPacketAt)}`:''} · Transcript: ${s.lastTranscriptAt?fmt(s.lastTranscriptAt):'none'}`;
 }});
 $('band-name').textContent=`Vexo-HACK-${String(BAND_NUMBER).padStart(2,'0')}`;
 $('connect').addEventListener('click',action(async()=>{await capture.connect();notice('Band 25 connected. Ready to record when you choose.');}));$('connect-usb').addEventListener('click',action(async()=>{await capture.connect('serial');notice('Band 25 connected over USB. Ready to record when you choose.');}));$('disconnect').addEventListener('click',action(()=>capture.disconnect()));$('identify').addEventListener('click',action(()=>capture.identify()));
-$('set-key').addEventListener('click',()=>{key=$('api-key').value.trim();$('api-key').value='';$('key-status').textContent=key?'Key ready for this tab only. Reload or Forget key to remove it.':'No key entered.';});
-$('forget-key').addEventListener('click',action(async()=>{await capture.stop();key='';$('api-key').value='';$('key-status').textContent='Key forgotten. Transcription stopped.';}));
+async function checkKey(){
+  const request=++keyCheckRequest;keyChecking=true;keyVerified=false;
+  $('key-status').textContent='Checking Deepgram without recording audio…';capture.emit();
+  try{
+    await checkSpeechConnection({key});if(request!==keyCheckRequest)return;
+    keyVerified=true;$('key-status').textContent='Deepgram connection verified. Key stays in this tab only.';
+    notice('Deepgram connected successfully. Confirm recording consent, then choose Test my voice.');
+  }catch(e){if(request===keyCheckRequest){$('key-status').textContent=e.message;notice(e.message,true);}}
+  finally{if(request===keyCheckRequest){keyChecking=false;capture.emit();}}
+}
+$('set-key').addEventListener('click',action(async()=>{key=$('api-key').value.trim();$('api-key').value='';await checkKey();}));
+$('check-key').addEventListener('click',action(checkKey));
+$('forget-key').addEventListener('click',action(async()=>{keyCheckRequest++;keyChecking=false;keyVerified=false;await capture.stop();key='';$('api-key').value='';$('key-status').textContent='Key forgotten. Transcription stopped.';capture.emit();}));
+$('consent').addEventListener('change',()=>capture.emit());
+$('test-voice').addEventListener('click',action(async()=>{
+  capture.validateStart({key,consent:$('consent').checked});voiceTest=true;
+  try{await capture.start({key,consent:$('consent').checked,maxDurationMs:15000});}
+  catch(e){voiceTest=false;capture.emit();throw e;}
+}));
 $('auto-save').addEventListener('change',()=>{$('start').textContent=$('auto-save').checked?'Record & remember here':'Start transcription';$('stop').textContent=$('auto-save').checked?'Stop & save':'Stop';});
 $('start').addEventListener('click',action(startRecording));
 $('stop').addEventListener('click',action(async()=>{startRequest++;await capture.stop();}));
@@ -61,11 +85,18 @@ async function startRecording(){
     context.watchId=navigator.geolocation.watchPosition(raw=>{const p=locationFix(raw);if(p.timestamp>=startFix.timestamp)context.samples.push(p);},e=>{context.problem=geolocationError(e);},{enableHighAccuracy:true,maximumAge:0,timeout:15000});
     await capture.start({key,consent:$('consent').checked});
     $('quick-status').textContent='Speak near band 25. Stop when finished; your words and this place will be saved together.';
-  }catch(e){clearCaptureLocation(liveContext);liveContext=null;$('quick-status').textContent=e.message;throw e;}
+  }catch(e){clearCaptureLocation(liveContext);liveContext=null;$('quick-status').textContent=`${e.message} You can use Test my voice to check audio without location.`;throw e;}
   finally{quickBusy=false;capture.emit();}
 }
 async function completeRecording(c){
-  const context=liveContext;liveContext=null;if(!context)return;
+  const context=liveContext;liveContext=null;
+  if(voiceTest){
+    voiceTest=false;
+    if(c){useConversation(c);$('quick-status').textContent='Voice test complete. Check your words below. To save a location memory, use Record & remember here or confirm the place in the editor.';notice('Live band audio was transcribed by Deepgram. Check that the words match what you said.');}
+    else {$('quick-status').textContent=capture.state.audioPackets?'Band audio arrived, but no final words were transcribed. Try again and speak close to the band.':'No band audio arrived. Check the USB connection, then try again.';notice($('quick-status').textContent,true);}
+    capture.emit();return;
+  }
+  if(!context)return;
   clearCaptureLocation(context);saving=true;capture.emit();
   try{
     if(!c)throw new Error('No final transcribed words arrived. Nothing was saved.');
@@ -119,6 +150,9 @@ function renderMemories(){
     const ds=element('p',demoStates.get(m.id)?.status||'Begin with “At place”.');ds.dataset.demoStatus=m.id;demo.append(controls,ds);card.append(demo);fragment.append(card);
   }
   $('memory-list').replaceChildren(fragment);
+  const canWatch=store.memories.some(m=>m.conversation.source!=='demo'&&Number.isFinite(m.place.accuracy)&&m.place.accuracy<=DEFAULTS.maxAccuracy);
+  $('watch').disabled=!watchRunning&&!canWatch;
+  if(!watchRunning&&!canWatch)$('watch-status').textContent='First record a conversation and save its measured location. Then return reminders become available.';
 }
 function deleteMemory(id){if(!confirm('Delete this saved memory and its stored transcript from this browser?'))return;const old=store.memories;store.memories=old.filter(m=>m.id!==id);try{persist();}catch(e){store.memories=old;throw e;}demoStates.delete(id);for(let i=reminders.length-1;i>=0;i--)if(reminders[i].id===id)reminders.splice(i,1);if(activeReminder?.id===id){activeReminder=null;$('return-dialog').close();}renderMemories();notice('Memory deleted from this browser.');}
 $('edit-form').addEventListener('submit',action(e=>{e.preventDefault();const m=store.memories.find(x=>x.id===editingId);const text=$('edit-reminder').value.trim();if(!m||!text)throw new Error('Enter a reminder.');const old=m.reminder;m.reminder=text;try{persist();}catch(e){m.reminder=old;throw e;}$('edit-dialog').close();renderMemories();notice('Reminder updated. The original transcript is unchanged.');}));$('cancel-edit').addEventListener('click',()=>$('edit-dialog').close());
@@ -155,9 +189,9 @@ function simulate(id,step){
 $('export').addEventListener('click',action(()=>{const data={...store,exportedAt:new Date().toISOString(),notes:'Contains private conversation and place information. Keep it somewhere you trust.'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='before-i-forget-memories.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice('Your memories were exported as JSON. Keep the file private.');}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){startRequest++;if(liveContext)liveContext.problem='Recording paused when the page was hidden. Review the place before saving.';if(watchRunning)stopWatch('Paused while this page was hidden. Enable again when you are ready.');for(const t of demoTimers)clearTimeout(t.timer);demoTimers.clear();demoStates.clear();void capture.stop().catch(()=>{});}});
 window.addEventListener('pagehide',()=>{key='';void capture.disconnect().catch(()=>{});});
-renderMemories();setSource('band');notificationStatus();
+renderMemories();setSource('band');notificationStatus();capture.emit();
 if(location.protocol==='file:'){
-  for(const id of ['connect','connect-usb','api-key','set-key','start','current-place','watch'])$(id).disabled=true;
+  for(const id of ['connect','connect-usb','api-key','set-key','check-key','start','test-voice','current-place','watch'])$(id).disabled=true;
   setSource('demo');
   $('device-status').textContent='Offline preview. Run npm start and open localhost for hardware and GPS.';
   notice('Offline preview — explore the fictional demo or paste text. For band capture and GPS, run npm start and open http://localhost:3000.');
