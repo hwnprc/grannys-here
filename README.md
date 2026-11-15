@@ -7,9 +7,10 @@ built on the Vexo Open band.
 
 Built at **VexoHacks** (AI Wearables Hackathon, Y Combinator SF) — November 14, 2026.
 
-**Live:** <https://grannys-here.vercel.app> — the memory, its 3D world, the family
-approval page, and an offline demo of the band companion. The band loop itself runs
-locally, because it talks to the hardware over Bluetooth.
+**Live:** <https://grannys-here.vercel.app> — the memory, its 3D world and the family
+approval page. The band companion is at <https://grannys-band.vercel.app>; it needs
+Chrome or Edge and the band in hand, since Web Bluetooth talks to the hardware
+directly. The Python demo loop stays local for the same reason.
 
 ---
 
