@@ -196,3 +196,6 @@ if(location.protocol==='file:'){
   $('device-status').textContent='Offline preview. Run npm start and open localhost for hardware and GPS.';
   notice('Offline preview — explore the fictional demo or paste text. For band capture and GPS, run npm start and open http://localhost:3000.');
 }
+
+// Exposed for vexo-world.js (timed reminders): same queue, dialog and notification as a return.
+window.beforeIForget = Object.freeze({ enqueueReminder: (m, simulated = true) => enqueueReminder(m, simulated) });
