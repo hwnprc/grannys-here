@@ -5,271 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Granny's Here</title>
 <style>
-  :root {
-    --bg:        #140f0b;
-    --bg-soft:   #1e1611;
-    --ink:       #f6ece1;
-    --ink-dim:   #c6b4a3;
-    --ink-faint: #8d7a69;
-    --amber:     #f0a850;
-    --amber-sq:  rgba(240, 168, 80, 0.14);
-    --line:      rgba(246, 236, 225, 0.14);
-    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  :root{
+    --paper:#f6f4ed; --surface:#fffefa; --ink:#292f28; --muted:#707569; --line:#dddcd1;
+    --green:#3b5747; --clay:#a24f35; --light:#e9eee7;
+    --serif:Georgia,"Times New Roman",serif; --sans:Arial,Helvetica,sans-serif;
   }
-
-  * { box-sizing: border-box; }
-
-  html, body { height: 100%; }
-
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
-    font-size: 17px;
-    line-height: 1.65;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ---- the place, behind everything ---- */
-
-  #world-layer {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    background:
-      radial-gradient(1200px 700px at 70% 25%, #3a2a1c 0%, transparent 70%),
-      radial-gradient(900px 600px at 20% 80%, #2a1f18 0%, transparent 70%),
-      var(--bg);
-  }
-
-  #world {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    opacity: 0;
-    transition: opacity 2.4s ease;
-  }
-
-  #world.visible { opacity: 1; }
-
-  /* keeps text readable over any frame of the video */
-  #scrim {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background:
-      linear-gradient(to right, rgba(20,15,11,0.94) 0%, rgba(20,15,11,0.78) 42%, rgba(20,15,11,0.30) 100%),
-      linear-gradient(to top, rgba(20,15,11,0.80) 0%, transparent 55%);
-  }
-
-  /* ---- the story, in front ---- */
-
-  main {
-    position: relative;
-    z-index: 2;
-    min-height: 100%;
-    display: flex;
-    align-items: center;
-    padding: 6vh 7vw;
-  }
-
-  .story {
-    max-width: 34rem;
-    animation: rise 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: none; }
-  }
-
-  .place {
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin: 0 0 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-
-  .place::before {
-    content: "";
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--amber);
-    box-shadow: 0 0 14px 3px rgba(240, 168, 80, 0.55);
-    animation: glow 3.4s ease-in-out infinite;
-    flex: none;
-  }
-
-  @keyframes glow {
-    0%, 100% { opacity: 0.55; }
-    50%      { opacity: 1; }
-  }
-
-  h1 {
-    font-family: var(--serif);
-    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
-    line-height: 1.12;
-    font-weight: 400;
-    margin: 0 0 1.4rem;
-    letter-spacing: -0.01em;
-  }
-
-  .summary {
-    font-family: var(--serif);
-    font-size: clamp(1.15rem, 1.7vw, 1.4rem);
-    line-height: 1.6;
-    color: var(--ink);
-    margin: 0 0 2rem;
-  }
-
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0 0 2.4rem;
-    padding: 0;
-    list-style: none;
-  }
-
-  .meta li {
-    font-size: 0.86rem;
-    color: var(--ink-dim);
-    background: var(--amber-sq);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.34rem 0.85rem;
-  }
-
-  button {
-    font-family: inherit;
-    font-size: 1.02rem;
-    color: var(--bg);
-    background: var(--amber);
-    border: 0;
-    border-radius: 999px;
-    padding: 0.85rem 1.7rem;
-    cursor: pointer;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-    box-shadow: 0 6px 26px rgba(240, 168, 80, 0.22);
-  }
-
-  button:hover  { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(240, 168, 80, 0.3); }
-  button:active { transform: none; }
-  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-
-  #pano {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 2.4s ease;
-  }
-
-  #pano.visible { opacity: 1; }
-
-  .actions { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; }
-
-  a.ghost {
-    font-size: 1.02rem;
-    color: var(--amber);
-    background: transparent;
-    border: 1px solid rgba(240, 168, 80, 0.45);
-    border-radius: 999px;
-    padding: 0.85rem 1.6rem;
-    text-decoration: none;
-    transition: background 0.18s ease, transform 0.18s ease;
-  }
-
-  a.ghost:hover { background: var(--amber-sq); transform: translateY(-2px); }
-  a.ghost:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-
-  .transcript {
-    margin-top: 2.6rem;
-    border-top: 1px solid var(--line);
-    padding-top: 1.3rem;
-  }
-
-  .transcript summary {
-    cursor: pointer;
-    font-size: 0.88rem;
-    letter-spacing: 0.04em;
-    color: var(--ink-faint);
-    list-style: none;
-  }
-
-  .transcript summary::-webkit-details-marker { display: none; }
-  .transcript summary::before { content: "＋  "; }
-  .transcript[open] summary::before { content: "−  "; }
-  .transcript summary:hover { color: var(--ink-dim); }
-
-  .transcript p {
-    font-family: var(--serif);
-    color: var(--ink-dim);
-    font-size: 1.02rem;
-    margin: 1rem 0 0;
-    max-height: 30vh;
-    overflow-y: auto;
-    padding-right: 0.8rem;
-  }
-
-  .note {
-    margin-top: 2.4rem;
-    font-size: 0.82rem;
-    color: var(--ink-faint);
-  }
-
-  /* ---- states ---- */
-
-  .state {
-    font-family: var(--serif);
-    font-size: 1.3rem;
-    color: var(--ink-dim);
-    max-width: 32rem;
-  }
-
-  .state code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.92rem;
-    color: var(--amber);
-    background: var(--bg-soft);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 0.15rem 0.45rem;
-  }
-
-  [hidden] { display: none !important; }
-
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before { animation: none !important; transition: none !important; }
-    #world { opacity: 1; }
-  }
-
-  @media (max-width: 760px) {
-    main { padding: 8vh 7vw; }
-    #scrim { background: linear-gradient(to top, rgba(20,15,11,0.95) 0%, rgba(20,15,11,0.72) 60%, rgba(20,15,11,0.5) 100%); }
-  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+  .top{max-width:1100px;margin:auto;padding:26px 42px 0;display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:13px}
+  .top a{color:var(--ink);text-decoration:none}.top a:hover{text-decoration:underline}
+  .brand{font:20px var(--serif)}.brand span{color:var(--clay)}
+  main{max-width:1100px;margin:auto;padding:28px 42px 70px;display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:start}
+  /* the place: a photograph in a frame, as his illustration card is */
+  #world-layer{position:relative;background:var(--light);border:1px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:4/3;box-shadow:0 22px 48px -28px #2a2e28}
+  #pano,#world{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.6s ease}
+  #pano.visible,#world.visible{opacity:1}
+  #scrim{display:none}
+  .story{animation:rise .9s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .place{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;margin:6px 0 14px;display:flex;align-items:center;gap:8px}
+  .place::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--clay)}
+  h1{font:300 42px/1.12 var(--serif);letter-spacing:-1.2px;margin:0 0 18px;text-wrap:balance}
+  .summary{font:19px/1.55 var(--serif);margin:0 0 20px;color:var(--ink)}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px;padding:0;list-style:none}
+  .meta li{font-size:11px;color:var(--muted);border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:5px 10px}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  button,a.ghost{font:600 14px var(--sans);border-radius:7px;padding:12px 18px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:10px;min-height:44px;border:1px solid transparent;transition:background .18s ease}
+  button{background:var(--green);color:#fffefa}button:hover:not(:disabled){background:#2e4739}
+  button:disabled{opacity:.45;cursor:default}
+  a.ghost{background:transparent;color:var(--ink);border-color:var(--line)}a.ghost:hover{background:#eeede5}
+  button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #b77c40;outline-offset:3px}
+  .transcript{margin-top:30px;border-top:1px solid var(--line);padding-top:16px}
+  .transcript summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);list-style:none}
+  .transcript summary::-webkit-details-marker{display:none}.transcript summary::before{content:"+  "}.transcript[open] summary::before{content:"−  "}
+  .transcript p{font:16px/1.7 var(--serif);color:var(--ink);background:#f3f2eb;border-left:2px solid #adbda5;padding:16px;margin:12px 0 0;max-height:34vh;overflow:auto}
+  .note{margin-top:18px;font-size:12px;color:var(--muted)}
+  .state{font:20px/1.5 var(--serif);color:var(--muted);max-width:34rem;grid-column:1/-1}
+  .state code{font:12px ui-monospace,Menlo,monospace;color:var(--clay);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#pano,#world{opacity:1}}
+  @media(max-width:820px){main{grid-template-columns:1fr;padding:22px 20px 50px}.top{padding:20px 20px 0}h1{font-size:34px}}
 </style>
 </head>
 <body>
-
-<div id="world-layer">
-  <img id="pano" alt="" aria-hidden="true">
-  <video id="world" muted loop playsinline preload="auto" aria-hidden="true"></video>
-</div>
-<div id="scrim"></div>
+<div class="top"><a class="brand" href="/">Before I Forget <span>·</span> Granny's Here</a><a href="family.html">Family page →</a></div>
 
 <main>
+<div id="scrim"></div>
   <!-- loading / error -->
   <p class="state" id="state">Opening the memory…</p>
 
@@ -294,6 +77,10 @@
 
     <p class="note" id="note" hidden></p>
   </article>
+<div id="world-layer">
+  <img id="pano" alt="" aria-hidden="true">
+  <video id="world" muted loop playsinline preload="auto" aria-hidden="true"></video>
+</div>
 </main>
 
 <audio id="voice" preload="auto"></audio>
