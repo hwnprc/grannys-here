@@ -25,6 +25,12 @@ The companion keeps no audio — it streams Opus straight to Deepgram and holds
 only counters — so there is no audio.wav to import. Record that with
 `capture.py 25 --id <id> --text no`.
 
+With --world it goes straight on to build each place in 3D from what she actually
+said, so a story told into the band becomes somewhere you can walk, with no
+hand-written prompt and no OpenAI key:
+
+    python3 import_companion.py <file> --world --draft
+
 Afterwards:  process.py <id>        fills summary/emotion/sensitive/scene_prompt
              place_to_world.py <id> builds the 3D world
 """
@@ -113,6 +119,10 @@ def main():
     ap.add_argument("--id", help="memory id to write under (single import only)")
     ap.add_argument("--location", help="override location_key (park, kitchen, church)")
     ap.add_argument("--force", action="store_true", help="overwrite an existing memory.json")
+    ap.add_argument("--world", action="store_true",
+                    help="after importing, build each memory's 3D world from what she said "
+                         "(runs place_to_world.py; about 5 minutes each)")
+    ap.add_argument("--draft", action="store_true", help="with --world: faster, cheaper worlds")
     args = ap.parse_args()
 
     path = Path(args.export_file).expanduser()
@@ -170,6 +180,16 @@ def main():
             ids.append(mid)
     index.write_text(json.dumps({"memories": ids}, indent=2) + "\n")
     print("%s index.json now lists %d memories" % (OK, len(ids)))
+
+    if args.world:
+        import subprocess
+        for mid in written:
+            print("\n%s building the world for %s from her own words..." % (DOT, mid))
+            cmd = ["python3", str(ROOT / "place_to_world.py"), mid]
+            if args.draft:
+                cmd.append("--draft")
+            if subprocess.call(cmd) != 0:
+                print("%s world generation failed for %s (the memory is still imported)" % (BAD, mid))
 
     print("\nImported memories are NOT approved: the band will not offer them yet.")
     print("Next:  python3 process.py %s --approve --location %s"

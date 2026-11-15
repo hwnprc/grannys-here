@@ -163,23 +163,28 @@ def shrink_pano(path):
           % (img.size[0], img.size[1], path.stat().st_size / 1e6, full.name))
 
 
-def generate_world(key, photo, prompt, name, model, public):
-    data_b64, ext = inline_image(photo)
+def generate_world(key, photo, prompt, name, model, public, recaption=False):
+    # No photo: Marble builds the place from the words alone. Raw speech is
+    # recaptioned (it turns a rambling story into a scene); a crafted
+    # scene_prompt is sent as written.
+    if photo is None:
+        world_prompt = {"type": "text", "text_prompt": prompt}
+        if not recaption:
+            world_prompt["disable_recaption"] = True
+    else:
+        data_b64, ext = inline_image(photo)
+        world_prompt = {
+            "type": "image",
+            "text_prompt": prompt,
+            "disable_recaption": not recaption,
+            "image_prompt": {"source": "data_base64", "data_base64": data_b64, "extension": ext},
+            "is_pano": "auto",
+        }
     body = {
         "display_name": name[:64],
         "model": model,
         "permission": {"public": public},
-        "world_prompt": {
-            "type": "image",
-            "text_prompt": prompt,
-            "disable_recaption": True,
-            "image_prompt": {
-                "source": "data_base64",
-                "data_base64": data_b64,
-                "extension": ext,
-            },
-            "is_pano": "auto",
-        },
+        "world_prompt": world_prompt,
     }
     r = requests.post(API + "/worlds:generate", json=body, headers={"WLT-Api-Key": key}, timeout=120)
     if r.status_code == 402:
@@ -244,10 +249,27 @@ def main():
     memory = json.loads(mem_path.read_text(encoding="utf-8")) if mem_path.exists() else {"id": mem_id}
 
     place = a.place or memory.get("place_name")
-    scene = a.prompt or memory.get("scene_prompt") or ("A realistic view of %s." % place if place else None)
-    if not place or not scene:
-        sys.exit("✗ need a place: run process.py first, or pass --place and --prompt")
+    # Her own words are the fallback prompt. process.py writes a crafted
+    # scene_prompt when OpenAI is available; without it, what she actually said
+    # describes the place far better than "a realistic view of X".
+    spoken = (memory.get("transcript") or "").strip()
+    if not spoken:
+        t = folder / "transcript.txt"
+        spoken = t.read_text(encoding="utf-8").strip() if t.is_file() else ""
+
+    scene = a.prompt or memory.get("scene_prompt")
+    raw_speech = False
+    if not scene and spoken:
+        scene, raw_speech = spoken, True
+    if not scene and place:
+        scene = "A realistic view of %s." % place
+    if not scene:
+        sys.exit("✗ nothing to build from: add a transcript, or pass --place and --prompt")
+    if not place:
+        place = "this place"
     print("📍 Place: %s" % place)
+    if raw_speech:
+        print("· no scene_prompt — building the place from her own words")
 
     # 1. real photo
     photo, credit = local_photo(folder), None
@@ -263,10 +285,15 @@ def main():
         if photo:
             print("✓ saved %s\n  credit: %s" % (photo, credit))
         else:
-            sys.exit("✗ no usable photo found. Put one in %s/photos/ and run again." % folder)
+            print("· no photo found for this place — building from the words alone")
 
     # 2. prompt
-    prompt = "%s %s" % (scene.strip(), REALISM)
+    # Without a photo there are no landmarks to keep: say so, or the model is
+    # told to preserve something that was never sent.
+    guidance = REALISM if photo else (
+        "Photorealistic, like a real photograph of this real place, natural light, "
+        "true-to-life materials and textures.")
+    prompt = "%s %s" % (scene.strip()[:3500], guidance)
     print("📝 Prompt: %s" % prompt)
     if a.dry_run:
         print("(dry run: no world generated)")
@@ -279,7 +306,8 @@ def main():
         sys.exit("✗ add WORLDLABS_API_KEY=... to .env")
     model = "marble-1.0-draft" if a.draft else a.model
     print("🌍 Sending photo + prompt to Marble (%s) ..." % model)
-    op_id = generate_world(key, photo, prompt, memory.get("title") or place, model, not a.private)
+    op_id = generate_world(key, photo, prompt, memory.get("title") or place, model,
+                           not a.private, raw_speech)
     print("  operation: %s" % op_id)
     world = wait_for(key, op_id)
 
